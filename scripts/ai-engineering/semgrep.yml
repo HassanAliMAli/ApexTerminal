@@ -1,0 +1,17 @@
+rules:
+  - id: python-shell-with-variable-command
+    languages: [python]
+    message: Review the command source and use an argument list without shell interpretation.
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.run($COMMAND, ..., shell=True, ...)
+          - pattern: subprocess.Popen($COMMAND, ..., shell=True, ...)
+      - metavariable-regex:
+          metavariable: $COMMAND
+          regex: '^[a-zA-Z_][a-zA-Z0-9_]*$'
+  - id: javascript-eval
+    languages: [javascript, typescript]
+    message: Replace dynamic evaluation with a bounded parser or explicit dispatch.
+    severity: WARNING
+    pattern: eval(...)

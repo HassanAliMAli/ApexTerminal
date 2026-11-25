@@ -1,0 +1,6 @@
+schema: spec-driven
+context: |
+  Read AGENTS.md and docs/ai-engineering/AGENT_WORKFLOW.md before drafting changes.
+  Store durable proposals, requirements, designs, and tasks in OpenSpec.
+  Use Superpowers procedures as guidance for those artifacts.
+  Verify native development flows without Docker.
