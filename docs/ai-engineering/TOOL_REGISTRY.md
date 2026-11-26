@@ -23,3 +23,15 @@ The user tool prefix is `~/.local/share/apex-ai`. npm tools are under `npm/node_
 | [OpenTelemetry](https://opentelemetry.io/) | Existing agent lockfile | Trace readiness through console or an authorized OTLP endpoint |
 
 Use the CLI from either agent for native quality checks. Start semantic indexing and browser diagnosis on demand. Current status and constraints are in the [verification report](VERIFICATION_REPORT.md).
+
+### On-demand quality tools
+
+| Component | Version | Installation |
+|---|---|---|
+| [pre-commit](https://pre-commit.com/) | 4.5.1 | Private tool prefix via `setup-hook` |
+| [Lighthouse](https://github.com/GoogleChrome/lighthouse) | 13.6.0 | Private `quality` npm prefix |
+| [fast-check](https://fast-check.dev/) | 4.11.0 | Private `quality` npm prefix |
+| [StrykerJS](https://stryker-mutator.io/) | 10.1.1 | Private `quality` npm prefix |
+| [Hypothesis](https://hypothesis.readthedocs.io/) | 6.170.17 | Private `quality-python` Python 3.13 environment |
+
+The npm prefix retains its exact manifest and lockfile. Reproduce it with `npm ci --prefix "$HOME/.local/share/apex-ai/quality" --ignore-scripts --no-audit --no-fund` using Node 26. Property and mutation tooling stays outside application dependency graphs until a change needs a project-specific suite.

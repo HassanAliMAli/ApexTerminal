@@ -9,7 +9,6 @@ on:
     paths:
       - "docs/**"
       - "website/**"
-      - "netlify.toml"
       - "backend-api/backend/**"
       - "frontend/**"
       - "agent/**"
@@ -111,15 +110,6 @@ jobs:
           node-version: 26.12.1
       - run: npm ci --ignore-scripts
         working-directory: website
-      - name: Look up the address that Netlify serves the site at
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        run: |
-          site=$(curl --fail --silent --show-error --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID")
-          address=$(jq --raw-output 'if .custom_domain then "https://" + .custom_domain else .ssl_url end' <<< "$site")
-          echo "URL=$address" >> "$GITHUB_ENV"
       - name: Generate the reference data, which fails when a page is out of step with the code
         working-directory: website
         run: node --disable-warning=ExperimentalWarning scripts/generate.mts
@@ -137,29 +127,3 @@ jobs:
       - name: Check that every page with headings has a table of contents
         working-directory: website
         run: node --disable-warning=ExperimentalWarning scripts/check-toc.mts
-      - name: Keep the built site for the deploy
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: site
-          path: website/build
-          if-no-files-found: error
-
-  deploy:
-    name: Deploy to Netlify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.base_ref == 'main' || github.event.merge_group.base_ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: site
-          path: site
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 26.12.1
-      - name: Publish the site that the build checked
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          PRODUCTION: ${{ github.event_name == 'push' && '--prod' || '' }}
-        run: npx --yes netlify-cli@27.15.0 deploy $PRODUCTION --no-build --dir site --message "$GITHUB_SHA"
