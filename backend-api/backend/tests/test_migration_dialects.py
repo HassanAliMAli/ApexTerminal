@@ -5,9 +5,10 @@ import subprocess
 import sys
 import tempfile
 
+import pytest
 import sqlalchemy as sa
 
-from tests.fixtures.native_services import LOOPBACK, mysql_instance
+from tests.fixtures.native_services import LOOPBACK, mysql_instance, valkey_instance
 
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -137,19 +138,27 @@ def _verify_database_upgrade(dialect: str, driver: str, port: int, valkey_port: 
         engine.dispose()
 
 
+@pytest.fixture
+def migration_valkey(tmp_path):
+    directory = tmp_path / "valkey"
+    directory.mkdir()
+    with valkey_instance(directory) as port:
+        yield port
+
+
 class TestMySQLMigrations:
-    def test_mysql_upgrade_head(self, tmp_path, native_valkey):
+    def test_mysql_upgrade_head(self, tmp_path, migration_valkey):
         with mysql_instance(tmp_path, binary_variable="APEX_TEST_MYSQL84D") as port:
-            _verify_database_upgrade("mysql", "mysql+pymysql", port, native_valkey)
+            _verify_database_upgrade("mysql", "mysql+pymysql", port, migration_valkey)
 
 
 class TestPostgreSQLMigrations:
-    def test_postgres_upgrade_head(self, native_postgres, native_valkey):
-        _verify_database_upgrade("postgresql", "postgresql+pg8000", native_postgres, native_valkey)
+    def test_postgres_upgrade_head(self, native_postgres, migration_valkey):
+        _verify_database_upgrade("postgresql", "postgresql+pg8000", native_postgres, migration_valkey)
 
 
 class TestSQLiteMigrations:
-    def test_sqlite_upgrade_head(self):
+    def test_sqlite_upgrade_head(self, migration_valkey):
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "test.db")
 
@@ -158,7 +167,7 @@ class TestSQLiteMigrations:
                 "DATABASE_TYPE": "sqlite",
                 "DB_PATH": db_path,
                 "REDIS_HOST": "127.0.0.1",
-                "REDIS_PORT": "6379",
+                "REDIS_PORT": str(migration_valkey),
                 "REDIS_PASS": "",
             }
 
