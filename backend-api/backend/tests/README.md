@@ -59,7 +59,7 @@ python -m pytest tests/test_migration_dialects.py::TestPostgreSQLMigrations -v
 
 ## Test Infrastructure
 
-The test setup uses [testcontainers-python](https://testcontainers-python.readthedocs.io/) to automatically manage:
+The test fixtures manage temporary native services:
 
 - **MySQL 8.0** container (random port, auto-configured)
 - **Valkey Alpine** container (random port, auto-configured)
