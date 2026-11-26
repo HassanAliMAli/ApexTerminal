@@ -26,3 +26,22 @@ Put the handoff in the OpenSpec change or share a file from the implementation w
 ```
 
 Ask the reviewer to inspect the exact revision, prioritize correctness and regression risks, and return findings with file references and supporting evidence. Resolve confirmed findings and repeat verification before archiving.
+
+## Specialist routing
+
+OpenCode loads the project roles from `.opencode/agents/`. Codex loads them from `.codex/agents/` in a trusted checkout. Give a specialist the specific files, revision and question it needs. Use one specialist when the work calls for one discipline.
+
+| Role | Work |
+|---|---|
+| `apex-architecture` | Contracts, design decisions and task sequencing |
+| `apex-frontend` | React, TypeScript and accessible interactions |
+| `apex-service` | API, authorization, persistence and migrations |
+| `apex-operations` | Native runtime, CI and deployment readiness |
+| `apex-quant` | Financial correctness and chart rendering |
+| `apex-design` | Interaction and visual review |
+| `apex-review` | Independent regression and security review |
+| `apex-quality` | Acceptance criteria, performance and verification |
+| `apex-debug` | Reproduction and root-cause analysis |
+| `apex-documentation` | Architecture records, verification evidence and handoff |
+
+OpenCode restricts shell and editing for architecture, design and independent review. For Codex review with enforced write restrictions, start a separate read-only parent session and point it at the revision under review. Both assistants reuse the project skills under `.agents/skills/`.

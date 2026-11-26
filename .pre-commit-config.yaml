@@ -1,0 +1,11 @@
+minimum_pre_commit_version: "4.0.0"
+repos:
+  - repo: local
+    hooks:
+      - id: apex-staged-secrets
+        name: Scan staged changes for secrets
+        entry: bash scripts/ai-engineering/check.sh staged-secrets
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

@@ -46,3 +46,7 @@ For a new OSV cache, download public databases by adding `--download-offline-dat
 Both live configuration files parsed after the edits. Codex CLI listed the configured entries. OpenCode confirmed connected status for Playwright and Context7. A model-mediated tool call from a fresh session in each agent was outside these checks.
 
 The checkout started dirty on `chore/native-development`. Existing changes were preserved. ApexTerminal’s `develop` branch was created from its own `main`. The setup was pushed on `feature/apex-ai-engineering` and proposed in [ApexTerminal PR #1](https://github.com/HassanAliMAli/ApexTerminal/pull/1).
+
+## Follow-up verification
+
+See the [specialists and local gate verification record](../../openspec/changes/complete-harness/verification.md) for current assistant discovery, the secret-gate fixture and the isolated quality-tool checks. The OpenCode MCP listing result there supersedes the earlier connection status in this report.
