@@ -51,6 +51,14 @@ for path, parse in zip(paths, (tomllib.loads, json.loads)):
   init)
     openspec init "${2:-.}" --scope project --tools agents --no-animation
     ;;
+  setup-hook)
+    UV_TOOL_DIR="$root/uv-tools" UV_TOOL_BIN_DIR="$root/bin" uv tool install pre-commit==4.5.1
+    pre-commit validate-config
+    pre-commit install
+    ;;
+  staged-secrets)
+    gitleaks git --staged --redact=100 --no-banner .
+    ;;
   secrets)
     result=0
     gitleaks git --redact=100 --no-banner . || result=1
@@ -64,7 +72,7 @@ for path, parse in zip(paths, (tomllib.loads, json.loads)):
     osv-scanner scan source --offline -L frontend/package-lock.json -L agent/package-lock.json -L website/package-lock.json -L backend-api/backend/poetry.lock
     ;;
   *)
-    printf 'Usage: bash %s {health|config|mcp|browser|backup|reproduce-npm|init [path]|secrets|sast|dependencies}\n' "$0" >&2
+    printf 'Usage: bash %s {health|config|mcp|browser|backup|reproduce-npm|init [path]|setup-hook|staged-secrets|secrets|sast|dependencies}\n' "$0" >&2
     exit 2
     ;;
 esac

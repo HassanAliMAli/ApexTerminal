@@ -9,3 +9,17 @@ For MCP rollback, remove or disable only the affected entry. Restore the previou
 If MCP discovery fails, parse both configs, check executable paths, and inspect client status. Use `enabled = true` for optional Codex servers and `disabled: false` for optional OpenCode servers. Restart the agent after editing. When starting Codex for one session, pass `-c mcp_servers.apex-serena.enabled=true` to enable Serena for that invocation. Keep Chrome DevTools disabled during ordinary Playwright sessions.
 
 GitHub MCP uses the official remote read-only server. Set `APEX_GITHUB_MCP_TOKEN` through a secure environment mechanism with a least-privilege credential for the intended repository, then enable the entry. Context7 queries should include only public package names and focused documentation questions. Obtain the project's required Node and Python versions before running its native build and full suites.
+
+## Local entry point and commit gate
+
+Run the following from the repository root. The Nushell wrapper locates the repository relative to its own path.
+
+```nu
+nu scripts/ai-engineering/harness.nu health
+nu scripts/ai-engineering/harness.nu config
+nu scripts/ai-engineering/harness.nu mcp
+nu scripts/ai-engineering/harness.nu setup-hook
+nu scripts/ai-engineering/harness.nu staged-secrets
+```
+
+`setup-hook` installs pinned pre-commit into the existing private tool prefix and registers the hook using pre-commit's default migration behavior for an existing hook. The scan reads staged content and redacts any findings. For another project, reuse the local hook entry and the staged-secret command with that project's chosen Gitleaks binary. The existing PR scanner also checks commits in the proposed change range.
