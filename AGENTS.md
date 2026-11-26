@@ -12,7 +12,7 @@ Self-hosted analytics workspace: web app, API, agent, MCP servers, widget plugin
 | `widget-plugins/` | Local plugin install directory that both stacks mount; git-ignored | |
 | `docs/` | Documentation source; `docs/examples/` holds example plugins, backends and reference agents | Markdown, MDX |
 | `website/` | Docs site | Docusaurus |
-| `sbom/` | CycloneDX SBOMs, written by `.github/workflows/sbom.yml` | |
+| `sbom/` | Existing CycloneDX dependency snapshots | |
 | `.github/workflows/` | CI | GitHub Actions |
 
 Read "Agent rules" below before changing `agent/`.
@@ -61,7 +61,7 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 
 - Write no comments in code, in any language.
 - Do not edit generated reference data by hand; `reference-data/` folders are git-ignored. Regenerate it: `docs/tutorials/contribute/regenerate-reference-data.md`.
-- Do not edit `sbom/` by hand. `.github/workflows/sbom.yml` regenerates it on `develop`.
+- Do not edit generated dependency snapshots in `sbom/` by hand. Use the current lockfiles for dependency audits.
 - A new database migration follows `docs/tutorials/contribute/add-a-database-migration.md`.
 - A new backend setting is a `Field` with a `description` in `Settings` (`backend-api/backend/utilities/config.py`), which generates the settings reference, and goes in `backend-api/backend/envs/.env.example`.
 - A new agent environment variable is described in `agent/src/lib/env-reference.ts`; a test fails without it.
