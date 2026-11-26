@@ -22,8 +22,8 @@ def main() -> None:
     reader = secrets.token_urlsafe(32)
     write_private(ENVIRONMENT, f"POSTGRES_PASSWORD={admin}\nEXPLORER_PASSWORD={reader}\n")
     for path in PLUGIN_URLS:
-        write_private(path, f"postgresql://explorer:{reader}@postgres:5432/explorer")
-    print("Wrote .env for Compose and secrets/workspace/<plugin>/postgres_url for each plugin.")
+        write_private(path, f"postgresql://explorer:{reader}@127.0.0.1:5432/explorer")
+    print("Wrote local PostgreSQL credentials to .env and secrets/workspace/<plugin>/postgres_url for each plugin.")
 
 
 if __name__ == "__main__":

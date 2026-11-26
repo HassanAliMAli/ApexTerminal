@@ -116,8 +116,6 @@ function filesOf(directory: string): string[] {
   });
 }
 
-const ON_ANOTHER_BRANCH = new Set(["docs/examples/backend/tests/test_isolation.py"]);
-
 export function checkAbuseCases(): void {
   const page = readFileSync(fromRepo("docs/reference/plugins/abuse-cases.mdx"), "utf8");
   const root = fromRepo(".");
@@ -129,7 +127,7 @@ export function checkAbuseCases(): void {
     const titles = [...cell.replace(/`[^`]*`/g, "").matchAll(/\b[a-z0-9]+(?:-[a-z0-9]+)+\b/g)].map((match) => match[0]);
     const found = named.map((name) => files.filter((file) => file === join(root, name) || file.endsWith(`/${name}`)));
     named.forEach((name, index) => {
-      if (!ON_ANOTHER_BRANCH.has(name) && (found[index] ?? []).length === 0) problems.push(`The abuse case "${row.slice(2, 50)}" names ${name}, which does not exist`);
+      if ((found[index] ?? []).length === 0) problems.push(`The abuse case "${row.slice(2, 50)}" names ${name}, which does not exist`);
     });
     for (const title of titles) {
       const sources = found.flat().filter((file) => readFileSync(file, "utf8").includes(`"${title}"`));
