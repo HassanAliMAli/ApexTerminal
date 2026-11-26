@@ -1,0 +1,11 @@
+# Maintenance
+
+Initial private backups are in `~/.local/share/apex-ai/backups/2026-11-26-initial`. The post-configuration snapshot is in `~/.local/share/apex-ai/backups/config.HyzwVJQR`. Back up the current files with `bash scripts/ai-engineering/check.sh backup`. Backups may contain credential references or embedded settings and should remain private and outside Git.
+
+For an npm update, review the upstream release and create a candidate prefix with the existing package manifest and lockfile. Install the exact candidate version with `--save-exact --ignore-scripts --no-audit --no-fund`, inspect the lockfile diff, and run the component smoke test before switching. Reproduce the active npm package graph with `bash scripts/ai-engineering/check.sh reproduce-npm`. Apply the same staging approach to uv tools. For native executables, download official release assets and verify the release checksums before replacing a binary. Retain the previous tool version until both agents pass connectivity checks.
+
+For MCP rollback, remove or disable only the affected entry. Restore the previous OpenCode Playwright object from the backup if reverting its launcher. If restoring entire files, compare them privately first and preserve settings added since the snapshot. For tool rollback, point the affected entry at the retained previous version. Remove only symlinks you can verify point to the dedicated Superpowers version directory.
+
+If MCP discovery fails, parse both configs, check executable paths, and inspect client status. Use `enabled = true` for optional Codex servers and `disabled: false` for optional OpenCode servers. Restart the agent after editing. When starting Codex for one session, pass `-c mcp_servers.apex-serena.enabled=true` to enable Serena for that invocation. Keep Chrome DevTools disabled during ordinary Playwright sessions.
+
+GitHub MCP uses the official remote read-only server. Set `APEX_GITHUB_MCP_TOKEN` through a secure environment mechanism with a least-privilege credential for the intended repository, then enable the entry. Context7 queries should include only public package names and focused documentation questions. Obtain the project's required Node and Python versions before running its native build and full suites.

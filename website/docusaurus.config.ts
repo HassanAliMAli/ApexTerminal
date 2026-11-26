@@ -32,6 +32,7 @@ const config: Config = {
         routeBasePath: "/",
         sidebarPath: "./sidebars.ts",
         exclude: [
+          "ai-engineering/**",
           "examples/**",
           "**/_*.{js,jsx,ts,tsx,md,mdx}",
           "**/_*/**",

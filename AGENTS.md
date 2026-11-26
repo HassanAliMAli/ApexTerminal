@@ -19,6 +19,10 @@ Self-hosted analytics workspace: web app, API, agent, MCP servers, widget plugin
 
 Read "Agent rules" below before changing `agent/`.
 
+## AI engineering workflow
+
+For substantial changes, follow [the shared agent workflow](docs/ai-engineering/AGENT_WORKFLOW.md). Keep requirements, design decisions, acceptance criteria, and tasks in OpenSpec. Use Superpowers procedures to guide execution and retain verification evidence in the same change. Load only the relevant skill. Use Context7 for unfamiliar APIs or dependency upgrades and Serena for targeted semantic navigation. For tool availability and local checks, run `bash scripts/ai-engineering/check.sh health` and consult [the setup guide](docs/ai-engineering/AI_ENGINEERING_SETUP.md).
+
 ## Skills
 
 Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that matches the task.
@@ -71,7 +75,7 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 
 ## Git
 
-`develop` is the integration branch. All work goes through feature branches off `develop` and pull requests into it.
+ApexTerminal follows its own development history. Use the ApexTerminal `origin` remote for feature branches, pushes, and pull requests. Its `develop` branch is the integration base. Keep synchronization with FINOS out of the ordinary development workflow.
 
 - Check the current branch first. On `main` or `develop`, create a feature branch.
 - Branch off the latest `origin/develop`:
