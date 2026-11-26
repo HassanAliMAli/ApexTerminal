@@ -2,25 +2,14 @@
 
 ## How to run the tests
 
-### Prerequisites
-
-- Docker must be running (testcontainers uses Docker to spin up MySQL and Valkey)
-- Python 3.13 with the dev dependencies installed
-- poetry install --with dev
-
-### Run tests
+Use Python 3.13 with the locked dev dependencies and the [native test binaries](../../../docs/tutorials/contribute/run-the-tests.md#the-backend). Run from a clean backend checkout:
 
 ```bash
-cd backend
-source venv/Scripts/activate   # or on Windows: venv\Scripts\activate
-pytest tests -v
+poetry install --with dev
+poetry run pytest tests -q
 ```
 
-That's it! **No manual docker-compose required.** Testcontainers automatically:
-
-1. Starts fresh MySQL and Valkey containers with random ports
-2. Configures the test environment to use those containers
-3. Stops and cleans up containers when tests finish
+The fixtures start temporary MySQL and Valkey processes on loopback and clean them up at the end.
 
 ### Running a specific test file
 
@@ -64,7 +53,7 @@ python -m pytest tests/test_migration_dialects.py::TestMySQLMigrations -v
 python -m pytest tests/test_migration_dialects.py::TestPostgreSQLMigrations -v
 ```
 
-> **Note:** MySQL and PostgreSQL tests require Docker. SQLite runs without Docker.
+> **Note:** MySQL and PostgreSQL tests require their native binaries. SQLite uses a temporary file.
 
 ---
 
@@ -137,9 +126,9 @@ The test teardown (in `conftest.py`) handles cleanup by:
 
 This ensures each test run starts with a clean database state.
 
-## Unit Tests (no Docker required)
+## Unit tests
 
-Some test files are pure unit tests that mock all external dependencies and don't need the integration test infrastructure (MySQL, Redis, Docker). They can be run standalone without Docker:
+Some test files are pure unit tests that mock all external dependencies and don't need the integration test infrastructure (MySQL or Valkey). They can be run standalone:
 
 ```bash
 pytest tests/scripts/test_create_local_env.py -v

@@ -9,7 +9,7 @@ Run your own FINOS Workspace as its administrator, put your plugin through the s
 
 ## Before you start
 
-You need a FINOS Workspace stack of your own. The local development stack of `local/` and the root `docker-compose.yml` are the simplest; both run with `MODE=local`, which steps 6 to 8 need.
+You need a FINOS Workspace stack of your own. Use the [native development stack](../contribute/run-the-development-stack.md) on loopback with `MODE=local` for steps 6 to 8.
 
 :::warning
 
@@ -17,7 +17,7 @@ Deployments run with `MODE=production`, including those built from the `develop`
 
 :::
 
-On either stack, the plugins directory is `widget-plugins/` at the root of the repository: the Widget plugins section of `local/LOCAL_SETUP.md` shows how the local stack mounts it, and the root compose file mounts the same directory. On any other stack, the API needs the same two things, as [Deploy a widget plugin](deploy-a-plugin.md) describes.
+Set `WIDGET_PLUGINS_DIR` to the absolute path of the repository’s `widget-plugins/` directory. On any other stack, the API needs the same two things, as [Deploy a widget plugin](deploy-a-plugin.md) describes.
 
 ## 1. Build the package
 
@@ -102,7 +102,7 @@ A deployment's data backend works the same way as long as it has a public `https
 
 The agent and the plugin backends of a deployment accept only that deployment's sessions and call tokens. A local stack can neither use them nor write to them. Run them on your machine instead:
 
-- The root `docker-compose.yml` runs the agent.
+- Start the agent as described in the source setup guide.
 - `docs/examples/backend/compose.yaml` shows a plugin backend.
 
 ## Before you publish

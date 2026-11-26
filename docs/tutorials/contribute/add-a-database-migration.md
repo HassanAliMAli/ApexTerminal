@@ -68,6 +68,6 @@ pytest tests/test_migration_chain.py tests/test_migration_dialects.py
 ```
 
 - **`test_migration_chain.py`** checks that every revision names a parent that exists, that no two revisions share a parent and that the chain has exactly one head. The API does not start when there is more than one head. When another branch has added a revision since you started, change your revision's `down_revision` to the new head and run the test again.
-- **`test_migration_dialects.py`** runs the whole chain on a fresh database of each of the three engines, MySQL, PostgreSQL and SQLite, and then reads every table. The MySQL and PostgreSQL tests start containers, so Docker has to run. The SQLite tests need none.
+- **`test_migration_dialects.py`** runs the whole chain on a fresh database of each of the three engines, MySQL, PostgreSQL and SQLite, and then reads every table. The MySQL and PostgreSQL tests start isolated native instances. SQLite uses a temporary file.
 
 Then upgrade a database that already holds data, from before your change, to the new head and check that the data survives. [Run the tests](run-the-tests.md) describes the rest of the backend's tests.

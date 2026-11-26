@@ -31,7 +31,7 @@ Do not start a title with "How to" or "About". The sidebar already says which ki
 
 ## Preview the site
 
-The site needs Node 26.12.1, the version that the repository's images run, and Docker. The reference pages are generated from data that the backend, the agent and the web app write, and git does not track it, so write the data once, as [Regenerate the reference data](regenerate-reference-data.md) describes. Then install the site's dependencies and start the development server:
+The site needs Node 26.12.1 and a Python 3.13 environment with the locked backend dependencies. The reference pages are generated from data that the backend, the agent and the web app write, and git does not track it, so write the data once, as [Regenerate the reference data](regenerate-reference-data.md) describes. Then install the site's dependencies and start the development server:
 
 ```bash
 cd website

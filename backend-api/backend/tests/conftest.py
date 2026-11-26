@@ -2,7 +2,8 @@ from os import environ
 
 pytest_plugins = [
     "tests.fixtures.hooks",
-    "tests.fixtures.containers",
+    "tests.fixtures.native_services",
+    "tests.fixtures.database_services",
     "tests.fixtures.migrations",
     "tests.fixtures.db",
     "tests.fixtures.clients",

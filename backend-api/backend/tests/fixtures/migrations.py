@@ -8,7 +8,7 @@ from .base import _seed_entities
 
 
 @pytest.fixture(scope="session")
-def apply_migrations(db_containers):
+def apply_migrations(db_services):
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     alembic_cfg_path = os.path.join(base_dir, "alembic.ini")
 

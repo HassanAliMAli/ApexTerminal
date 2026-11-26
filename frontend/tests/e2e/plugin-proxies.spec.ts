@@ -13,7 +13,7 @@ import {
 const PLUGINS_DIR = process.env.E2E_PLUGINS_DIR;
 const TLS_DIR = process.env.E2E_PROXY_TLS_DIR;
 const API_URL = process.env.E2E_API_URL ?? "https://localhost:8000";
-const HOST = process.env.E2E_PROXY_HOST ?? "proxy-upstream.e2e.test";
+const HOST = process.env.E2E_PROXY_HOST ?? "localhost";
 const PORT = Number(process.env.E2E_PROXY_PORT ?? 7792);
 const LISTEN = process.env.E2E_PROXY_LISTEN ?? "127.0.0.1";
 const ORIGIN = `https://${HOST}:${PORT}`;

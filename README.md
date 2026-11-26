@@ -32,37 +32,7 @@ The docs are built from the Markdown and MDX in [`docs/`](docs/) with Docusaurus
 
 ## Quick start
 
-You need Docker with Docker Compose, Python 3, and a GitHub personal access token (classic) with the `read:packages` scope.
-
-```bash
-# 1. Get the code
-git clone https://github.com/finos-labs/finos-workspace.git
-cd finos-workspace
-
-# 2. Log in to the GitHub container registry (once)
-echo <token> | docker login ghcr.io -u <github-username> --password-stdin
-
-# 3. Write the local settings and secrets
-(cd backend-api/backend && python3 -m scripts.create_local_env --admin-email <your-email>)
-
-# 4. Start everything (on Apple silicon: PLATFORM=linux/arm64 docker compose up --build)
-docker compose up --build
-
-# 5. In a second terminal, when the stack is up, set your password
-docker compose run --rm init python -m scripts.init_users --new-password <your-email>
-```
-
-Open <http://localhost:3000> and sign in with your email address and password.
-
-To let the AI agent answer questions, set `DEFAULT_MODEL` and your model provider's API key in `agent/.env`, then run `docker compose up -d`.
-
-To pull the images from Docker Hub instead of building them, which needs no token, follow the [Quick start guide](https://workspace.finos.org/quick-start?images=docker-hub).
-
-The [Quick start guide](https://workspace.finos.org/quick-start) continues from here: you write a small data backend and put its first widget on a dashboard.
-
-## Container images
-
-Each release publishes the four images on Docker Hub, built for `linux/amd64` and tagged with the release's tag: [`finos/workspace-backend`](https://hub.docker.com/r/finos/workspace-backend), [`finos/workspace-web`](https://hub.docker.com/r/finos/workspace-web), [`finos/workspace-agent`](https://hub.docker.com/r/finos/workspace-agent) and [`finos/workspace-agent-mcp`](https://hub.docker.com/r/finos/workspace-agent-mcp). [Deploy with Docker Compose](https://workspace.finos.org/tutorials/deploy/deploy-with-docker-compose) and [Deploy on Kubernetes](https://workspace.finos.org/tutorials/deploy/deploy-on-kubernetes) show how to run them.
+Follow [Run the stack from source](docs/tutorials/build-from-source/run-the-stack-from-source.md) to provision MySQL and Valkey, install the locked Python and Node dependencies, start ApexTerminal, and sign in. [Build the documentation](website/README.md) with the same native toolchain.
 
 ## Features
 

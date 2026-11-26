@@ -14,7 +14,7 @@ import {
 
 const PLUGINS_DIR = process.env.E2E_PLUGINS_DIR;
 const API_URL = process.env.E2E_API_URL ?? "https://localhost:8000";
-const HOST = process.env.E2E_BACKEND_HOST ?? "plugin-backend.e2e.test";
+const HOST = process.env.E2E_BACKEND_HOST ?? "localhost";
 const BACKEND_PORT = Number(process.env.E2E_BACKEND_PORT ?? 7794);
 const DATA_PORT = Number(process.env.E2E_DATA_PORT ?? 7795);
 const LISTEN = process.env.E2E_BACKEND_LISTEN ?? "127.0.0.1";

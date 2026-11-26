@@ -87,11 +87,11 @@ def test_jwt_hs256_matches_pyjwt():
     assert jwt.get_unverified_header(ours)["alg"] == "HS256"
 
 
-def test_the_settings_point_at_the_compose_services():
+def test_the_settings_point_at_native_loopback_services():
     values = local_env.settings("a-secret", "0123456789abcdef", "storage")
 
-    assert values["DB_HOST"] == "mysql"
-    assert values["REDIS_HOST"] == "valkey"
+    assert values["DB_HOST"] == "127.0.0.1"
+    assert values["REDIS_HOST"] == "127.0.0.1"
     assert values["STORAGE_PROVIDER"] == "folder"
     assert values["FRONTENDURL"] == "http://localhost:3000"
     assert values["SELFURL"] == "http://localhost:8000"
