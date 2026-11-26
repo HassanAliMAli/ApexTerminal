@@ -39,6 +39,7 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y nginx libnginx-mod-http-js
+          printf '%s\n' '127.0.0.1 proxy-upstream.e2e.test' | sudo tee -a /etc/hosts >/dev/null
           bash scripts/ci/native-test-tools.sh browser
       - name: Install the backend
         working-directory: backend-api/backend

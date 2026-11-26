@@ -132,7 +132,7 @@ cd backend-api/backend
 python -m tests.run_browser -- --project=chromium --project=firefox --project=webkit
 ```
 
-Set `APEX_TEST_MYSQLD` and `APEX_TEST_VALKEY` if their binaries are outside PATH. Use `--interop` before the argument separator for the scheduled plugin interop suite. Pass a Playwright file or filter after the separator to limit a local run. The launcher binds its HTTPS endpoints to loopback and creates and cleans up its test configuration, database, and certificate.
+Map `proxy-upstream.e2e.test` to `127.0.0.1` on the test host when running the plugin proxy spec. CI sets that entry on its isolated runner. Set `APEX_TEST_MYSQLD` and `APEX_TEST_VALKEY` if their binaries are outside PATH. Use `--interop` before the argument separator for the scheduled plugin interop suite. Pass a Playwright file or filter after the separator to limit a local run. The launcher binds its HTTPS endpoints to loopback and creates and cleans up its test configuration, database, and certificate.
 
 Every spec runs in the `chromium` project; the widget plugin specs (`plugin*.spec.ts`) also run
 in `firefox` and `webkit`, since a plugin's frame, policy and workers are where the engines

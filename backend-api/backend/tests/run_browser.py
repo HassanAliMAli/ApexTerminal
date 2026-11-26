@@ -123,7 +123,7 @@ def main() -> None:
         upstream_tls = directory / "upstream-tls"
         make_tls = FRONTEND / "tests/e2e/make-tls.sh"
         run(["sh", str(make_tls), str(tls), "localhost"])
-        run(["sh", str(make_tls), str(upstream_tls), "localhost"])
+        run(["sh", str(make_tls), str(upstream_tls), "proxy-upstream.e2e.test"])
         old_umask = os.umask(0o077)
         try:
             run(
