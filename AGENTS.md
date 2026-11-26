@@ -75,7 +75,7 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 
 ## Git
 
-`develop` is the integration branch. All work goes through feature branches off `develop` and pull requests into it.
+ApexTerminal follows its own development history. Use the ApexTerminal `origin` remote for feature branches, pushes, and pull requests. Its `develop` branch is the integration base. Keep synchronization with FINOS out of the ordinary development workflow.
 
 - Check the current branch first. On `main` or `develop`, create a feature branch.
 - Branch off the latest `origin/develop`:

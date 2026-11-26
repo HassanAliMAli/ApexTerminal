@@ -45,4 +45,4 @@ For a new OSV cache, download public databases by adding `--download-offline-dat
 
 Both live configuration files parsed after the edits. Codex CLI listed the configured entries. OpenCode confirmed connected status for Playwright and Context7. A model-mediated tool call from a fresh session in each agent was outside these checks.
 
-The checkout started dirty on `chore/native-development`. Existing changes were preserved. The fork has no `develop` branch, while upstream has one. The local feature branch uses upstream develop and was prepared in a separate worktree. The intended fork PR base must be established before the branch can be delivered by pull request.
+The checkout started dirty on `chore/native-development`. Existing changes were preserved. ApexTerminal’s `develop` branch was created from its own `main`. The setup was pushed on `feature/apex-ai-engineering` and proposed in [ApexTerminal PR #1](https://github.com/HassanAliMAli/ApexTerminal/pull/1).
