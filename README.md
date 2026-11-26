@@ -62,7 +62,7 @@ The [Quick start guide](https://workspace.finos.org/quick-start) continues from 
 
 ## Container images
 
-Each release publishes the four images on Docker Hub, built for `linux/amd64` and tagged with the release's tag: [`finos/workspace-backend`](https://hub.docker.com/r/finos/workspace-backend), [`finos/workspace-web`](https://hub.docker.com/r/finos/workspace-web), [`finos/workspace-agent`](https://hub.docker.com/r/finos/workspace-agent) and [`finos/workspace-agent-mcp`](https://hub.docker.com/r/finos/workspace-agent-mcp). [Deploy with Docker Compose](https://workspace.finos.org/tutorials/deploy/deploy-with-docker-compose) and [Deploy on Kubernetes](https://workspace.finos.org/tutorials/deploy/deploy-on-kubernetes) show how to run them.
+Upstream FINOS Workspace releases publish four `linux/amd64` images on Docker Hub: [`finos/workspace-backend`](https://hub.docker.com/r/finos/workspace-backend), [`finos/workspace-web`](https://hub.docker.com/r/finos/workspace-web), [`finos/workspace-agent`](https://hub.docker.com/r/finos/workspace-agent) and [`finos/workspace-agent-mcp`](https://hub.docker.com/r/finos/workspace-agent-mcp). [Deploy with Docker Compose](https://workspace.finos.org/tutorials/deploy/deploy-with-docker-compose) and [Deploy on Kubernetes](https://workspace.finos.org/tutorials/deploy/deploy-on-kubernetes) show how to run them.
 
 ## Features
 
