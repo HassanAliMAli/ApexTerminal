@@ -146,24 +146,16 @@ runs the widget's tests in Node, completion among them against DuckDB-WASM's Nod
 with the same binary and extensions (from `.cache/`, so build first; nothing is
 downloaded), and the backend's in pytest. The Postgres tests need a
 database they may change: set `SQL_EXPLORER_TEST_POSTGRES` to an administrator's URL, or
-`SQL_EXPLORER_TEST_POSTGRES_FILE` to a file holding it, for example of a throwaway
-container (`docker run --rm -d -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD_FILE=...
-postgres:18.6`). Without it they are skipped. The isolation of the backend's container is
-tested with the [examples backend](../backend/README.md).
+`SQL_EXPLORER_TEST_POSTGRES_FILE` to a file holding it, using a disposable native PostgreSQL instance. Without a URL the PostgreSQL-specific tests are skipped.
 
 ## Deploy
 
 1. Copy `dist/sql-explorer/<version>/` into FINOS Workspace's plugins directory and check it,
    from `backend-api/backend`:
    `python -m scripts.plugin_check <plugins directory>/sql-explorer/<version> --digest`.
-2. Build the backend's image. The [examples backend](../backend/README.md) does it: its
-   `Dockerfile` copies this package's `dist/sql-explorer/<version>/` and serves the package's
-   `backend/` beside the routes of the other examples.
-3. Run it as [run a plugin backend](../../tutorials/plugins/run-a-plugin-backend.md) describes: no privileges, a read-only
-   root, its own network that only a gateway joins from the FINOS Workspace side, the database
-   on a second network, the data files at `/data`. The examples backend's `compose.yaml`
-   does exactly this.
-4. List it for the API: `WIDGET_PLUGIN_BACKENDS={"sql-explorer": "http://<gateway>:<port>"}`.
+2. Start the [native example backend](../backend/README.md) for local development.
+3. For a shared environment, follow [run a plugin backend](../../tutorials/plugins/run-a-plugin-backend.md) for network and filesystem restrictions.
+4. Set `WIDGET_PLUGIN_BACKENDS` on the API to the authorized backend URL.
 5. In Admin, Widgets, Deployment: review and approve the version. Under Overrides, add the
    database's address to the server network, `tcp://<host>:<port>`, and confirm private
    hosts if it is one. Set the `postgres_url` secret, for a role that may only read (or

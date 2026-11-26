@@ -31,36 +31,11 @@ The API reads the other plugin settings from its environment, like every API set
 
 ## 1. Provide the directory
 
-Pick the way that fits how you build and release the API.
-
-**Build the packages into an image.** Every replica then carries identical files, and a new plugin version becomes a new image. Make sure the API's user can read the files.
-
-```dockerfile
-FROM <the API image>
-COPY <plugins directory> /opt/widget-plugins
-```
-
-**Mount a volume.** Mount a volume that every replica can read, read-only. On Kubernetes, the claim must allow read-only access from several pods:
-
-```yaml
-containers:
-  - name: api
-    env:
-      - name: WIDGET_PLUGINS_DIR
-        value: /opt/widget-plugins
-    volumeMounts:
-      - name: widget-plugins
-        mountPath: /opt/widget-plugins
-        readOnly: true
-volumes:
-  - name: widget-plugins
-    persistentVolumeClaim:
-      claimName: <claim that holds the packages>
-```
+Set `WIDGET_PLUGINS_DIR` to the absolute directory containing the packages. Give the API service account read access and keep the deployed versions identical across replicas.
 
 ## 2. Pin the version
 
-Run this in the API container, where the scripts are installed, or from `backend-api/backend` in a checkout:
+Run this from `backend-api/backend` with the backend Python environment active:
 
 ```bash
 python -m scripts.plugin_check --digest <plugins directory>/<plugin-id>/<version>
