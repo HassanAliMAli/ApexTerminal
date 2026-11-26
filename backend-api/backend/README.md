@@ -6,19 +6,7 @@ FastAPI + SQLAlchemy backend for FINOS Workspace.
 
 See [DEVELOPMENT_SETUP.md](../DEVELOPMENT_SETUP.md) for full local development instructions.
 
-Quick start for local UI testing:
-
-```bash
-docker compose -f docker-compose-local-dev.yml up --build --watch
-
-# in a second shell
-cd backend
-../.venv/bin/python -m scripts.init_users
-```
-
-This runs the API and RQ worker in Docker with the local `backend/` folder mounted.
-The API reloads automatically, and Compose can restart the worker when files change.
-See [DEVELOPMENT_SETUP.md](../DEVELOPMENT_SETUP.md) for the full workflow.
+See [DEVELOPMENT_SETUP.md](../DEVELOPMENT_SETUP.md) for native startup and verification.
 
 ## Project Layout
 
@@ -29,7 +17,7 @@ See [DEVELOPMENT_SETUP.md](../DEVELOPMENT_SETUP.md) for the full workflow.
 | `utilities/` | Configuration, shared utilities |
 | `alembic/` | Database migration revisions |
 | `envs/` | Environment files (`.env`) |
-| `scripts/` | Dev-only scripts and config (excluded from Docker images) |
+| `scripts/` | Administrative scripts and config |
 | `tests/` | Test suite (`pytest`) |
 | `run.py` | Application entrypoint (Gunicorn + Uvicorn) |
 | `main.py` | FastAPI app factory |

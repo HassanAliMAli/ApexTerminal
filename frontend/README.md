@@ -51,7 +51,7 @@ npm install
 npm run dev
 ```
 
-The app starts on `http://localhost:1420` and talks to the backend named by `VITE_BACKEND_URL` in `.env` (`http://localhost:8000` unless you change it). The root `docker-compose.yml` starts the whole stack, including this app on `http://localhost:3000`.
+The app starts on `http://localhost:1420` and talks to the backend named by `VITE_BACKEND_URL` in `.env` (`http://localhost:8000` unless you change it).
 
 ## Configuration
 
@@ -65,16 +65,11 @@ npm run preview          # serves the build on http://localhost:4173
 
 A runtime build loads `dist/config.js` before the app. Edit that file, or mount your own over it, to change a deployment's settings without rebuilding.
 
-### Docker image
+### Nginx runtime configuration
 
-The `Dockerfile` builds the runtime build once, so one image runs in every environment. nginx renders `config.js` from environment variables, for example `BACKEND_URL` and `AI_API_URL`, with `app-config.js`; a setting whose variable is not set keeps its default, and an invalid value makes `config.js` and the `/healthz` check answer 500. nginx serves the app on port 8080 as an unprivileged user. The image is built from scratch: nginx is compiled in the `Dockerfile` into one static binary, with njs, PCRE2, zlib and musl, and the image holds only that binary, its configuration (`nginx.conf`) and the app, with no shell or package manager.
+Nginx can serve the runtime build and render `config.js` from environment variables using the JavaScript module and `app-config.js`. Set the static root to `frontend/dist` and install the JavaScript module when deploying this configuration.
 
-```bash
-docker build -t workspace-frontend .
-docker run --rm -p 3000:8080 -e BACKEND_URL=http://localhost:8000 workspace-frontend
-```
-
-`app-config.js` has one row per setting in `src/lib/runtimeConfigSchema.ts`, with the variable that sets it and its type (`string`, `bool`, `list` or `theme`), and `nginx.conf` passes each variable to nginx with an `env` line. Adding or removing a setting in the schema means changing both: `node scripts/check-runtime-config.ts`, which the image build runs, fails when they disagree.
+`app-config.js` has one row per setting in `src/lib/runtimeConfigSchema.ts`, with the variable that sets it and its type (`string`, `bool`, `list` or `theme`), and `nginx.conf` passes each variable to nginx with an `env` line. Adding or removing a setting in the schema means changing both: `node scripts/check-runtime-config.ts` fails when they disagree.
 
 nginx also sends a `Content-Security-Policy` header, which `app-config.js` builds from the same variables and from `CSP_EXTRA_SOURCES` and `CSP_REPORT_ONLY` (its `HEADER_FIELDS`). nginx drops server-level headers in a location that sets its own, so every location with an `add_header` repeats the two policy headers; `tests/unit/appConfigCsp.test.ts` checks that, and that the hash of the plugin shell in `app-config.js` matches `src/plugins/shell/shell.js`.
 

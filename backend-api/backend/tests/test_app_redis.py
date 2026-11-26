@@ -1,7 +1,7 @@
 from api import auth_helpers
 
 
-async def test_calls_on_one_event_loop_share_one_client(db_containers):
+async def test_calls_on_one_event_loop_share_one_client(db_services):
     async with auth_helpers.app_redis() as first, auth_helpers.app_redis() as second:
         assert first is second
         assert await first.ping()

@@ -9,7 +9,7 @@ Each part of the repository has its own tests, and a pull request runs them in C
 
 ## The backend
 
-The backend needs Python 3.13, Poetry and a running Docker, because its tests start a MySQL and a Valkey container of their own and remove them afterwards. Run the commands in `backend-api/backend`:
+The backend needs Python 3.13, Poetry and native test binaries. The suite starts isolated, temporary MySQL and Valkey processes. Run the commands in `backend-api/backend`:
 
 ```bash
 poetry install --with dev
@@ -26,9 +26,11 @@ pytest tests -k Theme
 
 The suite is large, so a full run takes several minutes. Three kinds of test need extra care:
 
-- **A local stack changes the settings.** The backend reads `backend-api/backend/envs/.env` and `user_create.json` when they exist, and running the stack on the same checkout creates both. A value in them can make a test that expects the defaults fail. Move both files away for a full run and put them back afterwards.
-- **The storage tests start a fake Google Cloud Storage server.** `tests/test_gcp_storage.py` runs the Google Cloud Storage provider against the image `fsouza/fake-gcs-server`, which answers the JSON API of the real service.
-- **The migration tests start more containers.** `tests/test_migration_dialects.py` runs the whole chain of migrations on MySQL, PostgreSQL and SQLite. The SQLite part needs no Docker. [Add a database migration](add-a-database-migration.md) describes these tests.
+- **A local stack changes the settings.** The backend reads `backend-api/backend/envs/.env` and `user_create.json` when they exist, and running the stack on the same checkout creates both. A value in them can make a test that expects the defaults fail. Use a fresh Git worktree for verification so the developer settings stay in place.
+- **The storage tests start a fake Google Cloud Storage server.** `tests/test_gcp_storage.py` runs the Google Cloud Storage provider against the native `fake-gcs-server` binary, which answers the JSON API of the real service.
+- **The migration tests cover three databases.** `tests/test_migration_dialects.py` runs the whole chain of migrations on MySQL, PostgreSQL and SQLite. [Add a database migration](add-a-database-migration.md) describes these tests.
+
+The binary overrides are `APEX_TEST_MYSQLD` (MySQL 8.0), `APEX_TEST_MYSQL84D` (MySQL 8.4), `APEX_TEST_VALKEY` (Valkey 9.1.2), `APEX_TEST_INITDB` (PostgreSQL 16) and `APEX_TEST_GCS` (fake-gcs-server 1.56.1). Use absolute paths when the required binary is outside PATH. The workflow provisions these versions on Ubuntu 24.04.
 
 CI also lints the backend with Ruff, in the version that `backend-checks.yml` pins:
 
@@ -53,7 +55,7 @@ npm run test:unit
 - **`npm run test:unit`** runs the Vitest tests in `tests/unit`. To run a file, use `npx vitest run tests/unit/components/General/Avatar.test.tsx`, and to run tests by name, `npx vitest run -t "Avatar"`. Add `-- --coverage` to `npm run test:unit` for a coverage report. The tests mirror the structure of `src`, and the network is mocked with MSW.
 - **The spelling check** of CI uses the tool `typos` with `frontend/_typos.toml`, on `frontend/src` and the change log.
 
-The end-to-end tests run in a browser against a whole stack, over HTTPS, as a deployment serves it. They sign in as an account that exists in that stack. `frontend/TESTING.md` describes how to start the stack with `docker-compose.e2e.yml`, which account to name in `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`, and which projects run in which browsers. Then:
+The end-to-end tests run in a browser against a whole stack, over HTTPS, as a deployment serves it. They sign in as an account that exists in that stack. `frontend/TESTING.md` describes the native browser launcher and browser projects. Then:
 
 ```bash
 npm run test:e2e

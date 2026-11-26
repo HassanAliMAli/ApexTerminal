@@ -12,8 +12,6 @@ Self-hosted analytics workspace: web app, API, agent, MCP servers, widget plugin
 | `widget-plugins/` | Local plugin install directory that both stacks mount; git-ignored | |
 | `docs/` | Documentation source; `docs/examples/` holds example plugins, backends and reference agents | Markdown, MDX |
 | `website/` | Docs site | Docusaurus |
-| `local/` | Development stack with hot reload (`make up`) | Docker Compose, make |
-| `docker-compose.yml` | Stack of the images built from the Dockerfiles (`docker compose up --build`) | Docker Compose |
 | `sbom/` | Existing CycloneDX dependency snapshots | |
 | `.github/workflows/` | CI | GitHub Actions |
 
@@ -30,7 +28,6 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 | Skill | Use for |
 |---|---|
 | `install-locally` | Run the development stack or the built-image stack on a workstation |
-| `deploy-remotely` | Build the images and deploy to a server with Docker Compose or to Kubernetes |
 | `develop-plugins` | Build, validate, approve and try a widget plugin against a local stack |
 | `contribute` | Branch, run the checks, sign off, open a pull request |
 
@@ -53,10 +50,10 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 - Node 26.12.1 for `frontend/`, `agent/` and `website/` (`engines` and CI `node-version`). Python 3.13 for the backend (`python = "~3.13"`).
 - Install with `npm ci` in `agent/` and `npm ci --ignore-scripts` in `frontend/`, `website/` and the Node examples (`plotly-charts`, `ag-grid`, `sql-explorer`) in `docs/examples/`.
 - CI pins Ruff 0.15.22 and Poetry 2.3.2 (`.github/workflows/backend-checks.yml`).
-- Backend tests start MySQL and Valkey containers (testcontainers); Docker must run.
+- Backend tests start temporary native MySQL and Valkey processes. See the test guide for binary overrides.
 - Move `backend-api/backend/envs/.env` and `backend-api/backend/user_create.json` away before a full backend run and put them back after; the settings read both.
 - `npm run test:e2e` needs a running HTTPS stack and `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`: `frontend/TESTING.md`.
-- `npm run reference` needs Docker and replaces `node_modules` in `agent/` and `frontend/`. Run it before the docs site checks.
+- `npm run reference` uses the locked backend Python environment and replaces `node_modules` in `agent/` and `frontend/`. Run it before the docs site checks.
 - The `ag-grid` and `sql-explorer` tests also need a `.venv` with the Python test packages and a PostgreSQL: `.github/workflows/examples.yml`.
 - Detail per part: `docs/tutorials/contribute/run-the-tests.md`.
 
@@ -71,7 +68,7 @@ Task playbooks live in `.agents/skills/<name>/SKILL.md`. Load the one that match
 - Never commit `.env` files, `user_create.json`, `backend-api/backend/scripts/cfgs/config.toml`, secrets, `local_storage/` or `widget-plugins/`.
 - Keep changes to the files the task needs. No unrelated formatting changes.
 - Run the checks for every part you changed before you commit.
-- `MODE=local` (both Compose stacks) lets the API accept a private or plain `http` address from any user for a data backend, an agent or an MCP server, and lets a superuser develop a new version of an approved widget plugin in place. Deployments set `MODE=production`.
+- `MODE=local` lets the API accept a private or plain `http` address from any user for a data backend, an agent or an MCP server, and lets a superuser develop a new version of an approved widget plugin in place. Deployments set `MODE=production`.
 
 ## Git
 
