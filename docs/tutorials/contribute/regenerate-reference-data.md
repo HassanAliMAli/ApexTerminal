@@ -18,23 +18,24 @@ cd website
 npm run reference
 ```
 
-The script builds the image of the local stack, `workspace-api:local`, and runs the backend's exporter in a container of that image, as the next section describes, so the backend needs Docker and nothing else on your machine. Then it runs `npm ci` in `agent` and in `frontend`, so it replaces their `node_modules`. The sections after it show how to write the data of one part.
+The script uses Python 3.13 with the dependencies from `backend-api/backend/poetry.lock`. Set `BACKEND_PYTHON` to the absolute path of the environment's interpreter if needed. It also runs `npm ci` in `agent` and `frontend`, replacing their `node_modules`.
 
 ## Write the backend's data
 
-1. From the root of the repository, build the image that the local stack runs, and run the exporter in a container of it. Docker's cache makes the build copy only the code when the dependencies did not change. The container mounts `backend-api/backend`, so the exporter reads the current code. It runs as your user, so the files that it writes belong to you, and the variable `USER` gives Python that user's name, because the image has no entry for it. The exporter needs the variables of the `env` block of `pytest.ini`, so the command passes them with `-e`:
+1. Run the exporter with the backend's locked dependencies and the reference settings in `pytest.ini`:
 
    ```bash
-   docker compose build init
-   docker run --rm --platform "${PLATFORM:-linux/amd64}" --user "$(id -u):$(id -g)" -e "USER=$(id -un)" $(sed -n 's/^    \([A-Z_]*=.*\)$/-e \1/p' backend-api/backend/pytest.ini) -v "$PWD/backend-api/backend:/opt/code" workspace-api:local python -m scripts.export_reference_data
+   cd backend-api/backend
+   while IFS= read -r setting; do export "$setting"; done < <(sed -n 's/^    \([A-Z_]*=.*\)$/\1/p' pytest.ini)
+   python -m scripts.export_reference_data
    ```
 
    The exporter writes nine files into `backend-api/backend/reference-data`: `openapi.json`, `widgets_schema.json`, `plugin_manifest_schema.json`, `database_schema.json`, `settings.json`, `admin_cli.json`, `widget_plugins.json`, `workspace_bridge.json` and `api_metrics.json`. The last one lists the metrics that the API serves, which a test compares with what the API's instrumentation registers. Pass `-o <folder>` to write them elsewhere. A test fails when a setting, a manifest field, a widgets.json property, a field of a bridge command, a route of the API, a parameter of a route or a field of an API model has no description, so a new one needs its description in the code. A route gets its `summary` and `description` in its decorator, a parameter gets its description from `Path` or `Query`, and a model field gets it from `Field`.
 
-2. The page about the FINOS Workspace MCP server is generated from a fixture that the repository does keep, `tests/fixtures/workspace_mcp_sidecar_surface.json`, because it records the contract of that server. If the tools, resources or prompts of the server changed on purpose, run the second exporter in the same container, which writes the fixture into the mounted folder, and commit it:
+2. The page about the FINOS Workspace MCP server is generated from a fixture that the repository does keep, `tests/fixtures/workspace_mcp_sidecar_surface.json`, because it records the contract of that server. If the tools, resources or prompts of the server changed on purpose, run the second exporter with the same environment and commit the generated fixture:
 
    ```bash
-   docker run --rm --platform "${PLATFORM:-linux/amd64}" --user "$(id -u):$(id -g)" -e "USER=$(id -un)" $(sed -n 's/^    \([A-Z_]*=.*\)$/-e \1/p' backend-api/backend/pytest.ini) -v "$PWD/backend-api/backend:/opt/code" workspace-api:local python -m scripts.export_workspace_mcp_surface
+   python -m scripts.export_workspace_mcp_surface
    ```
 
 ## Write the agent's data

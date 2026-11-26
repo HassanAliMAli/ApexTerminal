@@ -1,6 +1,5 @@
 import io
 import json
-import socket
 from urllib.parse import parse_qs, urlparse
 from uuid import uuid4
 
@@ -15,39 +14,36 @@ from api.schemas import StoredFileSchema
 from api.storage.gcp import GCPStorage, GCSClients, service_account_email
 from utilities.config import Settings
 
+from tests.fixtures.native_services import LOOPBACK, executable, free_port, running, tcp_ready
+
 BUCKET = "workspace-files"
-IMAGE = "fsouza/fake-gcs-server:1.56.1"
 SERVICE_ACCOUNT = "files@workspace.iam.gserviceaccount.com"
 
 
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 @pytest.fixture(scope="module")
-def emulator_address():
-    from docker.errors import DockerException
-    from testcontainers.core.container import DockerContainer
-    from testcontainers.core.wait_strategies import LogMessageWaitStrategy
-
+def emulator_address(tmp_path_factory):
+    server = executable("APEX_TEST_GCS", "fake-gcs-server")
     port = free_port()
-    address = f"http://127.0.0.1:{port}"
-    try:
-        container = (
-            DockerContainer(IMAGE)
-            .with_command(f"-scheme http -port 4443 -backend memory -external-url {address}")
-            .with_bind_ports(4443, port)
-            .waiting_for(LogMessageWaitStrategy("server started at"))
-        )
-        container.start()
-    except DockerException as exc:
-        pytest.skip(f"Unable to start the Google Cloud Storage emulator: {exc}")
-    try:
+    address = f"http://{LOOPBACK}:{port}"
+    directory = tmp_path_factory.mktemp("gcs")
+    with running(
+        [
+            server,
+            "-scheme",
+            "http",
+            "-host",
+            LOOPBACK,
+            "-port",
+            str(port),
+            "-backend",
+            "memory",
+            "-external-url",
+            address,
+        ],
+        directory / "gcs.log",
+        lambda: tcp_ready(port),
+    ):
         yield address
-    finally:
-        container.stop()
 
 
 @pytest.fixture
@@ -200,9 +196,7 @@ async def test_a_machine_without_a_key_is_asked_for_its_service_account(bucket):
     client = GCSClients.get()
     client.token.service_data = {}
     try:
-        found = await service_account_email(
-            client, f"http://127.0.0.1:{port}/service-accounts/default/email"
-        )
+        found = await service_account_email(client, f"http://127.0.0.1:{port}/service-accounts/default/email")
     finally:
         await runner.cleanup()
 

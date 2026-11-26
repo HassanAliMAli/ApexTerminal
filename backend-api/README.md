@@ -12,20 +12,14 @@ The backend and admin tooling of FINOS Workspace.
 
 To run the whole stack, follow [Run the stack from source](https://workspace.finos.org/tutorials/build-from-source/run-the-stack-from-source). See [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md) for local development of the backend itself.
 
-## Infrastructure
-
-- `docker-compose.yml`: full-stack deployment (API, workers, database, Valkey)
-- `docker-compose-local-dev.yml`: infrastructure only (MySQL, Valkey, worker) for local backend development
-- `docker-compose-local-dev-postgres.yml`, `docker-compose-local-dev-sqlite.yml`: the same on PostgreSQL and on SQLite
-
 ## Admin CLI
 
 `backend/scripts/workspace_admin.py` manages entities, users, data backends and widget plugins. It runs
-inside the API container and works on the database itself: it sends no request to the API,
-so it needs no sign-in.
+from the backend directory and uses the configured database directly. Run it from the backend Python environment.
 
 ```bash
-docker compose exec api python -m scripts.workspace_admin --help    # the root docker-compose.yml
+cd backend
+python -m scripts.workspace_admin --help
 ```
 
 | Command | Does |

@@ -5,11 +5,11 @@ sidebar_position: 7
 
 # Add a data backend for your organization
 
-A backend that you connect from the Connections page belongs to you, and it ends with your account. A backend that you add for the organization with the admin command line belongs to the organization: it stays when people come and go, and no person's account owns it. Nobody uses it until a role grants it, an admin included, so a person of type User, who cannot add connections of their own, gets it the same way as any other shared backend. This guide adds one with the admin command line, lists and removes it, and grants it to a role. You need access to the API's container, because the tool runs there.
+A backend that you connect from the Connections page belongs to you, and it ends with your account. A backend that you add for the organization with the admin command line belongs to the organization: it stays when people come and go, and no person's account owns it. Nobody uses it until a role grants it, an admin included, so a person of type User, who cannot add connections of their own, gets it the same way as any other shared backend. This guide adds one with the admin command line, lists and removes it, and grants it to a role. You need access to the configured backend Python environment.
 
 ## Find the organization's id
 
-Run the tool in the API container. On Kubernetes that is `kubectl exec` into a pod of the API, and on the local stack it is `docker compose exec api`. This command lists the organizations with their ids:
+Run the command in `backend-api/backend` with the backend Python environment active:
 
 ```bash
 python -m scripts.workspace_admin entity list

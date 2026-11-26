@@ -9,11 +9,7 @@ Ask the Agent a question about the data on a dashboard. You choose which widget 
 
 ## What you need
 
-You need the dashboard from [Connect a backend and build a dashboard](../../tutorials/build-a-backend/connect-a-backend-and-build-a-dashboard.mdx), or any dashboard that has a widget with data. You also need an AI model for the agent to use. If you did not set one in the first lesson, open `agent/.env` in your clone, set `DEFAULT_MODEL` to a model in the form `<provider>:<model>`, and set the key of that provider in the same file. Then recreate the agent's containers, which reads the file again:
-
-```bash
-docker compose up -d
-```
+You need the dashboard from [Connect a backend and build a dashboard](../../tutorials/build-a-backend/connect-a-backend-and-build-a-dashboard.mdx), or any dashboard that has a widget with data. You also need an AI model for the agent to use. If you did not set one in the first lesson, open `agent/.env` in your clone, set `DEFAULT_MODEL` to a model in the form `<provider>:<model>`, and set the key of that provider in the same file. Restart the native agent to load the file.
 
 Your account also has to be allowed to use the model. A new organization has a role named Agent User that grants every model of the agent, and every new user receives it, so an account that you created with the first lesson already qualifies. [Choose the models and tools of a role](../administration/choose-the-models-and-tools-of-a-role.md) explains how to limit it.
 

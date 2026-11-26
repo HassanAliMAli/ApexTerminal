@@ -5,79 +5,48 @@ sidebar_position: 1
 
 # Run the stack from source
 
-Start a complete FINOS Workspace on your own computer, set a password for the first administrator, and sign in. This stack is for trying FINOS Workspace and for development. A deployment runs the same images on your own platform and sets the same variables through that platform's configuration.
+Use Python 3.13, Node 26.12.1, MySQL 8 and Valkey. Provision a dedicated application database, a database account scoped to it, and a cache instance on loopback. The database account needs schema privileges on the application database for migrations. Keep the database and cache listeners private.
 
-At the end, the web app, the API, the background worker, the database and the AI agent are running, and you are signed in as an administrator.
+## Configure the backend
 
-## What you need
-
-You need a clone of the repository, three tools on your computer and an account on GitHub:
-
-- Docker with Docker Compose, to build and run the containers.
-- Python 3, to run the script that writes the configuration.
-- About 10 minutes for the first build, because the images are built from source.
-- A GitHub account that can read the packages of `finos-labs`, and a personal access token (classic) of that account with the `read:packages` scope. The images build on the `finos-node` base image, which GitHub's container registry serves to logged-in readers only.
-
-## Log in to the container registry
-
-Log in once, with your GitHub user name and the token. Docker keeps the login, so later builds need nothing more:
+From `backend-api/backend`, create a Python 3.13 virtual environment and install the locked backend dependencies with Poetry. Run the following with that environment active:
 
 ```bash
-echo <token> | docker login ghcr.io -u <github-username> --password-stdin
+python -m pip install --require-hashes -r poetry-requirements.txt
+poetry install --only main
 ```
 
-## Create the configuration
+Create `envs/.env` from `envs/.env.example` if it does not already exist, and restrict file access to your account. Set the following values before running migrations:
 
-FINOS Workspace needs secrets and addresses before it can start. A script writes all of them for you. Run it from the `backend-api/backend` directory of your clone, and give it the email address that the first administrator will use:
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, and the read and write database credentials for the dedicated database.
+- `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASS` for Valkey.
+- `APPURL` and `FRONTENDURL` to `http://127.0.0.1:1420`, `SELFURL` to `http://127.0.0.1:8000`, and `BACKEND_CORS_ORIGINS` to the exact frontend origin.
+- Distinct random secrets for `JWT_SECRET`, `WORKSPACE_AES_KEY` and `LOCAL_STORAGE_SECRET_KEY`. Generate the AES key with `python -c 'import secrets; print(secrets.token_urlsafe(32))'`.
+- `MODE=production` for a server other people can access. Keep the configuration private.
+
+If `scripts/cfgs/config.toml` does not already exist, create administrator configuration with `python -m scripts.create_local_env --config-only --no-extra-admins --admin-email you@example.com`. Confirm the database points at the intended instance, then run:
 
 ```bash
-cd backend-api/backend
-python3 -m scripts.create_local_env --admin-email <your-email>
-cd ../..
+python -m alembic upgrade head
+python -m scripts.init_users
 ```
 
-The script writes four files that git does not track. It fills `backend-api/backend/envs/.env` with random keys and the addresses of the stack. It writes `backend-api/backend/scripts/cfgs/config.toml`, which names the organization and the administrator that the first start creates. It holds no password. It creates an empty `backend-api/backend/user_create.json` that the first start fills in, and it writes `agent/.env` with the settings of the AI agent. The script refuses to overwrite the first two files unless you pass `--force`, and a run with `--force` keeps the other settings in `agent/.env` and gives the agent a new metering token.
+## Set the administrator password {#set-the-administrators-password}
 
-The AI agent also needs a model. Open `agent/.env`, set `DEFAULT_MODEL` and the key of that model's provider, and save the file. The stack starts without them, but the Agent then answers "No model is configured" and tells you to set `DEFAULT_MODEL`.
+Run `python -m scripts.init_users --new-password you@example.com` and enter the password when prompted.
 
-## Start the stack
+## Start the services
 
-From the root of the clone, build and start everything:
+Run these in separate terminals or under your process supervisor:
 
-```bash
-docker compose up --build
-```
+| Directory | Command |
+|---|---|
+| `backend-api/backend` | `python -m uvicorn main:app --host 127.0.0.1 --port 8000` |
+| `backend-api/backend` | `python base_workers.py` |
+| `frontend` | `npm ci --ignore-scripts`, then `VITE_BACKEND_URL=http://127.0.0.1:8000 npm exec -- vite --host 127.0.0.1` |
 
-On a computer with Apple silicon, build for your own processor instead:
+Check `curl -fsS http://127.0.0.1:8000/health`, then open `http://127.0.0.1:1420`. The commands bind to loopback. For access from another machine, serve the built frontend and API through your HTTPS reverse proxy and set the URLs and CORS origin to the actual published address.
 
-```bash
-PLATFORM=linux/arm64 docker compose up --build
-```
+## Build the docs
 
-Compose builds the images and starts MySQL, Valkey, the API, the worker, the web app, the agent and its tools server. The first build takes several minutes. The stack is ready when `docker compose ps`, run in a second terminal, shows the API as healthy. The first start also creates the organization and the administrator that `config.toml` names. The administrator has no password yet.
-
-You can now reach three addresses. The web app is on [http://localhost:3000](http://localhost:3000), the API is on [http://localhost:8000](http://localhost:8000) and the agent is on [http://localhost:7777](http://localhost:7777).
-
-## Set the administrator's password
-
-Open a second terminal in the root of the clone and run this command. It asks you to type the password twice, and it does not show what you type:
-
-```bash
-docker compose run --rm init python -m scripts.init_users --new-password <your-email>
-```
-
-Use the same email address that you gave to the script. Nothing prints, logs or stores the password in a file: it is in the database. You can run the command again at any time to set a new password, which ends every session of the account.
-
-## Sign in
-
-Open [http://localhost:3000](http://localhost:3000). Enter your email address and the password, and select Login. You arrive on the Apps page, which is empty because no backend is connected yet.
-
-Look around before you continue. The sidebar on the left holds Apps, Connections, the Widgets and AI libraries, and your dashboards. Because you are an administrator, the main menu also offers Admin Portal, which opens the admin area at [http://localhost:3000/admin](http://localhost:3000/admin) on the Users page. Its sidebar offers Users, Roles and Access, Entities, Widgets, Apps, Theme and Account.
-
-## Stop the stack
-
-Press `Ctrl+C` in the terminal that runs Compose, or run `docker compose down` in the root of the clone. This keeps your data, including the administrator's password, so the next `docker compose up` continues where you stopped. To remove the databases as well, run `docker compose down -v`, and set the password again after the next start.
-
-## Where to go next
-
-You now have a working FINOS Workspace to experiment with. [Web app configuration](../../reference/configuration/web-app.mdx), [Backend settings](../../reference/configuration/backend.mdx) and [Agent and MCP server](../../reference/configuration/agent.mdx) list every setting that you can change. To make the app look like your own, follow [Design and apply a theme in the admin area](../../features/administration/design-a-theme-in-the-admin-area.mdx).
+From `website`, run `npm ci --ignore-scripts`, `npm run reference`, and `npm run build`. If the backend virtual environment is not on PATH, set `BACKEND_PYTHON` to its absolute interpreter path before running the reference command.

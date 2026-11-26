@@ -2,7 +2,7 @@
 
 **The agent** is the FINOS Workspace's copilot agent. It searches the widgets on your dashboards, fetches their data, runs SQL over that data in-process, builds and edits dashboards, and streams back cited answers. It is made for a deployment with many users: it signs each caller in with the FINOS Workspace API, enforces the roles and usage limits the FINOS Workspace's admins set, keeps each user's chats apart, and says what it does in structured logs and Prometheus metrics (see [Running for many users](#running-for-many-users)).
 
-The **MCP server** (in [`mcp-server/`](./mcp-server)) holds the tools the agent uses beyond the widgets: web search, web-page fetch and document search. In the repository's `docker-compose.yml` it runs with the agent and every user has it. The agent itself (widget search, data, SQL, dashboards, skills) does not need it.
+The **MCP server** (in [`mcp-server/`](./mcp-server)) holds the tools the agent uses beyond the widgets: web search, web-page fetch and document search. The agent itself (widget search, data, SQL, dashboards, skills) does not need it.
 
 Built on Node + Hono + the Vercel AI SDK + the Model Context Protocol. Node runs the TypeScript as it is: there is no build step.
 
@@ -26,7 +26,7 @@ Built on Node + Hono + the Vercel AI SDK + the Model Context Protocol. Node runs
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) 26, with the npm it ships
-- The FINOS Workspace — needed to use the agent from its UI (the repository's `docker-compose.yml` runs both)
+- The FINOS Workspace — needed to use the agent from its UI
 - At least one LLM provider key: `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, or `NVIDIA_API_KEY` — or a local [Ollama](https://ollama.com) endpoint via `OLLAMA_BASE_URL`
 - Optional, for some of the MCP server's tools: `AGENT_EMBED_MODEL` as `<provider>:<model>` with that provider's key (document search). Web search uses DuckDuckGo and needs no key
 
@@ -44,31 +44,22 @@ npm run typecheck             # tsc --noEmit — must be zero errors
 npm test                      # node --test, over tests/ and mcp-server/test
 ```
 
-Outside the repository's compose stack there is usually no FINOS Workspace API to sign users in with, so on a development machine set `AGENT_AUTH=none` in `.env`: every request is then anonymous and nothing is counted (the agent logs a warning). Without it the agent expects the settings of a deployment with users and says which are missing when it starts.
+For an isolated agent development session without a Workspace API, set `AGENT_AUTH=none` in `.env`: every request is then anonymous and nothing is counted (the agent logs a warning). Without it the agent expects the settings of a deployment with users and says which are missing when it starts.
 
 `npm run dev:agent` alone is enough for widget search, data fetching, SQL analysis, dashboard editing, and skills; the MCP server adds the rest.
 
 ### Connect it to the FINOS Workspace
 
-With the repository's `docker-compose.yml`, the agent is already wired in: the web app's `AI_API_URL` points at it and the Copilot is on. To connect a FINOS Workspace by hand, in **AI Library → AI Agents → Add Agent** add the agent as a custom agent:
+To connect the agent to FINOS Workspace, in **AI Library → AI Agents → Add Agent** add the agent as a custom agent:
 
 - **Custom agent** → `http://localhost:7777`. The FINOS Workspace API reads the descriptor at `/agents.json` and sends queries to `/v1/query`: the API makes these calls, so the address must be one the API can reach (a stack with `MODE=local` reaches `localhost` on your machine; a user who is not a superuser can otherwise add only a public `https` address), and the agent needs no CORS settings for the web app.
-- **MCP server** → `http://localhost:8787/mcp`. The FINOS Workspace lists the tools on connect and forwards them to the agent in each request. With the repository's `docker-compose.yml` you do not add it: the API registers it for every user (`DEFAULT_MCP_SERVERS`), and the web app calls it through the API's MCP proxy, which is also where a user's roles are checked on each tool call. The FINOS Workspace's own tools need no registration: the web app gives them to the agent itself.
+- **MCP server** → `http://localhost:8787/mcp`. The FINOS Workspace lists the tools on connect and forwards them to the agent in each request. To register it for every user, set `DEFAULT_MCP_SERVERS` on the API. The API's MCP proxy checks user roles for each call. The FINOS Workspace's own tools need no registration: the web app gives them to the agent itself.
 
 If you only want the MCP server with a different client (Claude Desktop, say), skip the agent and point that client at `http://localhost:8787/mcp`. See [The FINOS Workspace's tools: three surfaces](#the-finos-workspaces-tools-three-surfaces).
 
-### Run it in a container
+### Run supervised services
 
-The Dockerfile has two targets: `agent` runs the agent (`src/server.ts`) on port `7777`, and `agent-mcp` runs the MCP server on `8787`. The agent's logs are JSON and its metrics are on `9464` (the MCP server's on `9465`); neither port needs publishing.
-
-Both run on a Node that the Dockerfile compiles from source (with clang and LLVM's libc++: Node's own builds link GCC's libstdc++, which is GPL). The first build compiles it, which takes about 20 minutes on a fast machine; later builds take it from Docker's cache. Build for your machine's architecture (`--platform linux/arm64` on Apple silicon): under emulation the compile takes hours. CI does not compile it: the stage is released as the image `ghcr.io/<owner>/finos-node` (`.github/workflows/finos-node.yml`), and CI builds the images with the release `.github/workflows/agent-node.yml` names (`--build-context node=docker-image://<image>`). For linux/amd64 a local build can take the release the same way instead of compiling.
-
-```bash
-docker build --target agent -t agent .
-docker run --rm -p 7777:7777 --env-file .env agent          # with AGENT_AUTH=none in .env, or the settings of a deployment
-docker build --target agent-mcp -t agent-mcp .
-docker run --rm --env-file .env agent-mcp
-```
+Run `node --env-file-if-exists=.env src/server.ts` for the agent and `node --env-file-if-exists=.env mcp-server/src/server.ts` for the MCP server from this directory. Use separate unprivileged service accounts and keep the metrics ports private.
 
 ## Philosophy
 
@@ -384,7 +375,6 @@ What strangers can send the agent (files, pages, a user's own questions) and wha
 - **What is read is bounded before it is paid for**: sizes of files, rows, chunks and pages, and the chunks one user may have embedded in an hour (`AGENT_INGEST_CHUNKS_PER_HOUR`, default 20,000), all checked before a model or an embedding is called.
 - **Text a model reads is data.** The system prompt says so, and the tools are held to it: `fetch_webpage` fetches only an address the agent signed (`x-agent-url-sig`), and the agent signs only an address that was in what the model was given: the user's messages and attachments, and what a search, a page, a widget or a document returned. Not what the model wrote itself, and not the results of the SQL tools or of `recall_conversation`, which repeat any string they are told to. The match is exact, so an address with the user's data added is refused (`src/agent/known-urls.ts`, `mcp-server/src/lib/url-check.ts`). `AGENT_FETCH_ANY_URL=true` turns this off. A model's answer cannot show an image from outside: `![alt](address)` becomes a link the user may follow (`neutralizeImages` in `src/protocol/events.ts`), since the chat window loads an image by itself and its address could carry the user's data. The web app holds to the same rule on its side, whatever an agent sends: the chat renders no image of any kind (alt text only), no raw HTML, no script and no style from message text, and an HTML artifact (a table, a chart) is shown in an iframe whose own content security policy lets the browser load nothing by address (`frontend/src/components/AI/artifactPolicy.ts`: images and fonts only as `data:`, inline styles, no scripts but the app's own); the preview of a link the user clicks is loaded only when they ask for it, and in a sandbox.
 - **The process stays up and says why it did not**: unhandled errors are logged and counted (`agent_unhandled_errors_total`), `SIGTERM` stops taking requests and lets the running ones end (`AGENT_SHUTDOWN_GRACE_SECONDS`, default 25), and `LIVE_DEBUG_TRACES` is ignored in production unless `AGENT_ALLOW_DEBUG_TRACES=true`.
-- **The containers** (`docker-compose.yml`) have a read-only root, no capabilities, no new privileges, a memory limit (`AGENT_MEM_LIMIT`, default 4g) and a limit on processes.
 
 ### The web tools
 
@@ -537,17 +527,14 @@ The picked model is bound to the chat. Change it in the settings wheel, then **s
 **I edited `DEFAULT_MODEL` in `.env` but nothing changed.**
 `npm run dev:agent` runs `node --watch`, which restarts the server when its code or `.env` changes; a server started some other way reads `.env` only when it starts. (And remember the FINOS Workspace picker still wins over `DEFAULT_MODEL` — see above.)
 
-**Ollama works locally but not from the Docker container (connection refused).**
-Inside a container, `localhost` is the container itself, not your host machine. Point `OLLAMA_BASE_URL` at `http://host.docker.internal:11434/api` instead of `http://localhost:11434/api`.
-
 **Ollama errors immediately — a `Model error` in chat / a 404 on `/api/chat`.**
 The tag after `ollama:` in `DEFAULT_MODEL` must be a model you've **actually pulled**, matching exactly. If it isn't, Ollama 404s the chat request and the agent surfaces a `Model error`. Check what's installed with `ollama list` and pull the one you want (`ollama pull <model>`).
 
 **Do I need the MCP server?**
-The repository's compose stack runs it, and the tools in it are how the agent searches the web and your documents. The agent itself is standalone — widget search, data, SQL, dashboards, and skills all work with `npm run dev:agent` alone. The MCP server adds web search, fetch, diagrams, and document search.
+Its tools support web and document search. The agent itself is standalone — widget search, data, SQL, dashboards, and skills all work with `npm run dev:agent` alone. The MCP server adds web search, fetch, diagrams, and document search.
 
 **The agent will not start and lists what is missing.**
-With the default `AGENT_AUTH=workspace` the agent needs `WORKSPACE_API_URL`, `WORKSPACE_ORIGIN`, `AGENT_METERING_TOKEN`, `AGENT_SCOPE_SECRET` and `AGENT_CORS_ORIGINS`, and it stops at start if any is missing instead of running without users. In the compose stack `create_local_env` and `docker-compose.yml` set them. On a development machine with no FINOS Workspace API, set `AGENT_AUTH=none`.
+With the default `AGENT_AUTH=workspace` the agent needs `WORKSPACE_API_URL`, `WORKSPACE_ORIGIN`, `AGENT_METERING_TOKEN`, `AGENT_SCOPE_SECRET` and `AGENT_CORS_ORIGINS`, and it stops at start if any is missing instead of running without users. Set these values in the native agent service environment. On a development machine with no FINOS Workspace API, set `AGENT_AUTH=none`.
 
 **A user is told a limit is reached, or that their role does not allow a model.**
 Both come from the FINOS Workspace, not from the agent: the daily limits and the models are what the user's roles grant (a role's limits and Copilot access), and the tools are what the roles grant together with the servers of the user's backends and the servers the user added, less the web tools none of their roles allows (see "The web tools"). The agent only enforces them, and says so in the chat in the API's own words.

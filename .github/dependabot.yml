@@ -45,16 +45,7 @@ updates:
         update-types: [minor, patch]
 
   - package-ecosystem: docker
-    directories:
-      - /agent
-      - /agent/tests/stub-model
-      - /backend-api/backend
-      - /docs/examples/backend
-      - /frontend
+    directory: /docs/examples/backend
     target-branch: develop
     schedule:
       interval: weekly
-    groups:
-      docker:
-        patterns: ["*"]
-        update-types: [minor, patch]

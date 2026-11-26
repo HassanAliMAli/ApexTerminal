@@ -1,68 +1,16 @@
 # Stress / load tests
 
-A repeatable, multi-user load simulator for the backend + FINOS Workspace MCP, plus a launcher that
-brings up the topology you want to test.
+Run the multi-user load simulator against a dedicated, loopback API instance. Start the API using the [native setup guide](../../../../docs/tutorials/build-from-source/run-the-stack-from-source.md). Set the API worker count when starting Uvicorn. Use a fresh test database and administrator.
 
-> These are **manual** load tests against a running stack — not part of the pytest suite. The
-> pytest regression tests (`tests/test_bridge_load.py`, `tests/test_runtime_metrics.py`,
-> `tests/test_workspace_mcp_bridge.py`) stay where they are.
-
-## Contents
-
-| file | purpose |
-|---|---|
-| `run_stress.sh` | launcher — brings up the MySQL dev stack with a chosen worker count and runs the simulator |
-| `load_simulator.py` | the load generator (realistic multi-user FINOS Workspace MCP traffic) |
-| `docker-compose.stress.yml` | one parameterized overlay (workers + Prometheus), layered on a base stack |
-
-## Prerequisites
-
-- Docker + `docker compose`.
-- A Python with `aiohttp` and `websockets` for the simulator. The launcher auto-uses the backend
-  venv (`backend/venv`) if present; otherwise set `PYTHON=/path/to/python`.
-- Run from a bash shell (Git Bash on Windows).
-
-## Quick start
+Run from this directory with the backend's Python environment active:
 
 ```bash
-cd backend/tests/stress
-
-# 3 workers, 80 users — the production-representative run
-./run_stress.sh --workers 3 --users 80
-
-# MCP-impact A/B: hold API load fixed, add a pool of MCP-only hammerers
-./run_stress.sh --workers 3 --users 80 --mcp-users 0  --api-mcp 0   # baseline
-./run_stress.sh --workers 3 --users 80 --mcp-users 40 --api-mcp 0   # + MCP load
-
-# Just bring the stack up (no load), or tear it down
-./run_stress.sh --workers 1 --no-run
-./run_stress.sh --down
+export BASE_URL=http://127.0.0.1:8000
+export ORIGIN=http://127.0.0.1:1420
+USERS=80 DURATION=20 RAMP=5 ./run_stress.sh
 ```
 
-## Flags
-
-| flag | default | meaning |
-|---|---|---|
-| `--workers` | `1` | uvicorn worker processes |
-| `--users` | `40` | simulated API users |
-| `--duration` | `20` | seconds |
-| `--ramp` | `5` | stagger user arrival over this many seconds (avoids a thundering herd) |
-| `--mcp-users` | `0` | extra MCP-only users layered on top (for measuring MCP's impact on the API) |
-| `--api-mcp` | `1` | `0` makes the API users pure-API (no MCP in their mix) — use for the A/B above |
-| `--seed` | off | run `init_users` to create the admin user (needed once on a fresh DB) |
-| `--no-run` | off | bring the stack up but skip the simulator |
-| `--down` | off | tear the stack down and exit |
-
-The simulator authenticates as the administrator that `ADMIN_EMAIL` and `ADMIN_PASSWORD` name; both
-are required. With `--seed`, that is the administrator listed in `scripts/cfgs/config.toml`
-(write it with `python -m scripts.create_local_env --admin-email <your-email>`), and the seed step
-sets their password to `ADMIN_PASSWORD` (read from standard input, never printed). Every
-simulated user comes from one address, so they send the stack's `WORKSPACE_AUTH_TOKEN` as
-`X-Workspace-Authorization` and the stress overlay sets `RATE_LIMIT_EXEMPT_ENABLED=1`, which lets
-that token skip rate limiting (development stacks only; set both yourself for a stack you started
-another way). The simulated users are the web app: they ride its session cookie with its client header and the
-origin `ORIGIN` (default `http://localhost:3000`), which must be one of the stack's
-`BACKEND_CORS_ORIGINS`.
+Provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` through your local secret environment. To simulate more users from one address, enable `RATE_LIMIT_EXEMPT_ENABLED` only on the isolated test deployment and provide its `WORKSPACE_AUTH_TOKEN`. Set `MCP_USERS` to add MCP-only users and `API_MCP=0` to exclude MCP from the API users' traffic.
 
 ## What it does
 

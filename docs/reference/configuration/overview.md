@@ -14,7 +14,7 @@ You configure FINOS Workspace with environment variables, one set for each kind 
 |---|---|---|---|
 | API, worker and init step | Environment variables with the names of the settings, without a prefix and without regard to case. A setting without a default is required, and so are the settings that the choice of `DATABASE_TYPE` and `STORAGE_PROVIDER` calls for, such as the database accounts with MySQL or the key for links to files with file storage in a folder. The process does not start without them. | `backend-api/backend/envs/.env` | [Backend settings](../../reference/configuration/backend.mdx) |
 | The agent and its MCP server | Environment variables. The table says which of the two processes reads each one. | `agent/.env`, from the template `agent/.env.example` | [The agent and its MCP server](../../reference/configuration/agent.mdx) |
-| Web app | The environment of its container, which nginx writes into `/config.js` each time that the container starts. A variable that is not set leaves its setting at the default, and a value that does not fit its type makes `/config.js` and `/healthz` answer with status 500. | The `environment` of the service `web` in `docker-compose.yml` | [Web app configuration](../../reference/configuration/web-app.mdx) |
+| Web app | The environment of the frontend’s Nginx process, which renders `/config.js`. A variable that is not set leaves its setting at the default, and a value that does not fit its type makes `/config.js` and `/healthz` answer with status 500. | The native frontend service environment | [Web app configuration](../../reference/configuration/web-app.mdx) |
 
 A few settings of the web app are fixed when its image is built, such as the name of the app that people install on their devices. [White label](../../features/white-label/index.md) lists them.
 
@@ -38,7 +38,7 @@ A few settings of the web app are fixed when its image is built, such as the nam
 | File | Read by | Guide |
 |---|---|---|
 | `scripts/cfgs/config.toml` | The init step, which creates the first organization and administrators from it | [Run database migrations](../../tutorials/deploy/run-database-migrations.mdx#prepare-a-first-deployment) |
-| `user_create.json` | The API and the worker. The init step writes it, and `DEFAULT_USER_MAPPING` stands in for it where they cannot see it | [Deploy on Kubernetes](../../tutorials/deploy/deploy-on-kubernetes.mdx#run-the-init-step) |
+| `user_create.json` | The API and the worker. The init step writes it, and `DEFAULT_USER_MAPPING` stands in for it where they cannot see it | [Run the stack from source](../../tutorials/build-from-source/run-the-stack-from-source.md#set-the-administrators-password) |
 | A file that describes an organization | The script that provisions organizations | [Provision an organization from a file](../../tutorials/deploy/provision-an-organization.mdx) |
 | A theme stylesheet | The web app, at the address that `WL_STYLESHEET` gives | [Create a theme](../../features/white-label/create-a-theme.md) |
 | The certificates for the database | The API and the worker, at the paths that `SSL_CA`, `SSL_CERT` and `SSL_KEY` give | [Connect FINOS Workspace to its database and cache](../../tutorials/deploy/connect-the-database-and-cache.md) |

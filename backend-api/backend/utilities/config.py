@@ -200,8 +200,7 @@ class DatabaseSettings(BaseModel):
     DB_HOST: str | None = Field(
         None,
         description=(
-            "The host name of the database server. Required with DATABASE_TYPE mysql or postgresql. Outside Docker, for "
-            "example with docker-compose-local-dev.yml, use localhost."
+            "The database host name. Required with DATABASE_TYPE mysql or postgresql. Use loopback for a local database."
         ),
     )
     DB_NAME: str | None = Field(
@@ -295,8 +294,7 @@ class RedisSettings(BaseModel):
     REDIS_HOST: str = Field(
         "valkey",
         description=(
-            "The host name of the Redis or Valkey server. Outside Docker, for example with docker-compose-local-dev.yml, "
-            "use localhost."
+            "The Redis or Valkey host name. Use loopback for a local cache."
         ),
     )
     REDIS_USER: str | None = Field(

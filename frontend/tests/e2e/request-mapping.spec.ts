@@ -12,8 +12,8 @@ import {
 
 const API_URL = process.env.E2E_API_URL ?? "https://localhost:8000";
 const BACKEND_PORT = Number(process.env.E2E_ECHO_BACKEND_PORT ?? 7791);
-const BACKEND_HOST = process.env.E2E_ECHO_BACKEND_HOST ?? "host.docker.internal";
-const BACKEND_LISTEN = process.env.E2E_ECHO_BACKEND_LISTEN ?? "0.0.0.0";
+const BACKEND_HOST = process.env.E2E_ECHO_BACKEND_HOST ?? "127.0.0.1";
+const BACKEND_LISTEN = process.env.E2E_ECHO_BACKEND_LISTEN ?? "127.0.0.1";
 const SOURCE_NAME = "E2E request mapping";
 const SOURCE_KEY = "e2e-source-key";
 const WIDGET = "E2E team report";

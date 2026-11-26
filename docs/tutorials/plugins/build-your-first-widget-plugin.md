@@ -13,7 +13,7 @@ You need:
 
 - The FINOS Workspace that [Run the stack from source](../build-from-source/run-the-stack-from-source.md) starts, with its administrator signed in.
 - The backend of [Connect a backend and build a dashboard](../build-a-backend/connect-a-backend-and-build-a-dashboard.mdx), connected as **Sales demo**.
-- A text editor, and a terminal in the repository folder, next to `docker-compose.yml`.
+- A text editor, and a terminal in the repository folder.
 
 :::note
 
@@ -121,32 +121,14 @@ The manifest says who the plugin is and which widget it offers:
 
 The API reads plugins from one folder in its container, and it ignores plugins until `WIDGET_PLUGINS_DIR` names that folder.
 
-1. Create `~/workspace-plugin-tutorial/compose.plugins.yml`:
-
-   ```yaml
-   services:
-     api:
-       environment:
-         WIDGET_PLUGINS_DIR: /opt/widget-plugins
-       volumes:
-         - ${HOME}/workspace-plugin-tutorial/packages:/opt/widget-plugins:ro
-   ```
-
-2. Start the stack again with this file added. Compose recreates the API's container and leaves the rest as it is:
-
-   ```bash
-   docker compose -f docker-compose.yml -f "$HOME/workspace-plugin-tutorial/compose.plugins.yml" up -d
-   ```
-
-The mount is read-only, because the API only reads the folder.
+Set `WIDGET_PLUGINS_DIR` in the API environment to the absolute path of `~/workspace-plugin-tutorial/packages`. Give the API user read access and restart the backend to load the setting.
 
 ## 4. Check the package
 
-The server has its own validator. It runs the checks that the server applies to a plugin and reports what it would refuse. Run it in the API's container, on your package as the container sees it:
+The server has its own validator. It runs the checks that the server applies to a plugin and reports what it would refuse. Run it from `backend-api/backend` with the backend Python environment active:
 
 ```bash
-docker compose -f docker-compose.yml -f "$HOME/workspace-plugin-tutorial/compose.plugins.yml" \
-  exec api python -m scripts.plugin_check /opt/widget-plugins/row-table/1.0.0
+python -m scripts.plugin_check "$HOME/workspace-plugin-tutorial/packages/row-table/1.0.0"
 ```
 
 The validator refuses the package, and it tells you why:

@@ -69,9 +69,9 @@ def settings(
     jwt_secret: str, aes_key: str, storage_secret: str
 ) -> dict[str, str]:
     return {
-        "DB_HOST": "mysql",
+        "DB_HOST": "127.0.0.1",
         "DB_NAME": "workspace",
-        "REDIS_HOST": "valkey",
+        "REDIS_HOST": "127.0.0.1",
         "STORAGE_PROVIDER": "folder",
         "MODE": "production",
         "FRONTENDURL": WEB_URL,
@@ -136,7 +136,7 @@ def render(example: str, values: dict[str, str]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Write envs/.env and scripts/cfgs/config.toml for docker compose."
+        description="Write envs/.env and scripts/cfgs/config.toml for a local workspace."
     )
     parser.add_argument(
         "--admin-email", required=True, help="Email address of the first administrator"
@@ -186,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     sys.stdout.write(
         f"Wrote {CONFIG if args.config_only else f'{target} and {CONFIG}'}\n"
         f"The first start creates the administrator {args.admin_email} without a password. "
-        "Set it with: docker compose run --rm init python -m scripts.init_users "
+        "Set it with: python -m scripts.init_users "
         f"--new-password {args.admin_email}\n"
     )
     if extra_admins:
