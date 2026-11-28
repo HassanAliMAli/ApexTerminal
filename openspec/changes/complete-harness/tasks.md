@@ -23,4 +23,4 @@
 - [x] 3.2 Fit project instructions within default budgets and verify scoped Codex discovery.
 - [x] 3.3 Verify the clean native installation and full startup, shutdown, restart and application acceptance criteria.
 - [x] 3.4 Refresh advisory data and verify patched lockfiles.
-- [ ] 3.5 Obtain independent review and record the feature-branch PR and CI outcome.
+- [x] 3.5 Obtain independent review and record the feature-branch PR and CI outcome.
