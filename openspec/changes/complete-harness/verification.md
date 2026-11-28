@@ -38,6 +38,6 @@ These were the outstanding checks on November 26. Native startup and test instru
 
 OpenCode’s `nemotron-3.5-lightning-free` model reviewed allowlisted exports of public ApexTerminal revisions `a8fa58d` and `78caa3c`. Each standalone process used a temporary home without workstation configuration or credentials. For each revision, two completed read-tool calls inspected `AGENTS.md` and `.github/workflows/local-security.yml`. The review identified the change from `develop` to `main` and verified the `--redact=100` scan in both revisions.
 
-GitHub reported zero deployments, zero environments, and disabled GitHub Pages. The homepage points to upstream FINOS Workspace documentation. No ApexTerminal deployment target was identified in repository workflows or documentation. A deployment managed outside GitHub remains unverified until its inventory is confirmed.
+GitHub reported zero deployments, zero environments, and disabled GitHub Pages. The homepage points to upstream FINOS Workspace documentation. The repository owner confirmed that ApexTerminal has no active deployment outside GitHub either. Task 2.4 is not applicable.
 
 The independent working-tree review was completed before opening [PR #11](https://github.com/HassanAliMAli/ApexTerminal/pull/11). CI on `78caa3c` returned 21 successful checks and one skipped optional CodeRabbit check. The PR merged into `main` at `91455bf`. The retired `develop` and feature branches were verified as merged before deletion.
