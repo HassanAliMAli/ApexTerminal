@@ -7,27 +7,27 @@ import { SettingConstant } from "@site/src/components/Reference/config";
 
 # Run database migrations
 
-The API's tables change from release to release, and each change is a migration of the tool Alembic, stored as a revision in `backend-api/backend/alembic/versions`. The migrations run before the API starts, so that a new image meets the schema that it expects. This guide explains when they run, how several containers avoid running them at once, and how to run them yourself, check the state of a database and prepare a first deployment.
+The API's tables change from release to release. Each migration is an Alembic revision in `backend-api/backend/alembic/versions`. The migrations run before the API starts, so each release meets the schema it expects. This guide explains how replicas coordinate migrations and how to check a database or prepare a first deployment.
 
 ## When the migrations run
 
-The API's image starts with the script `api_entrypoint.py`. Its first step runs `python -m alembic upgrade head` and its second step starts the API. When the migrations fail, the script prints "Database migrations failed" and stops with the exit status 1, so a container that cannot migrate does not start serving requests, and a platform that restarts it shows the reason in the log. The upgrade applies every revision that the database lacks, in order, and does nothing when the database is current.
+Run `python api_entrypoint.py` from `backend-api/backend` in the API's Python environment. It runs `python -m alembic upgrade head` and then starts the API. If a migration fails, it logs "Database migrations failed" and exits with status 1 before serving requests. The upgrade applies missing revisions in order.
 
-A deployment that runs several replicas can also run the migrations in a step of its own before it rolls out the replicas, for example as a job that starts the API's image with the command above. That step is safe to run again whenever a release starts.
+A deployment with several replicas can also run `python -m alembic upgrade head` as a one-off job before restarting them. The command can be repeated on a database that is already current.
 
-## Several containers at once
+## Several replicas at once {#several-containers-at-once}
 
-Starting many replicas at the same moment would run the same migration several times, so for MySQL and PostgreSQL the migrations take a lock in Valkey, under the key `alembic_migrations`. The first container that finds the lock free keeps it for at most <SettingConstant name="migrationLockSeconds" unit="min" /> and migrates. The others print "Another migration in progress by pod" and the id of the holder, and they wait, asking again every <SettingConstant name="migrationPollSeconds" unit="s" />. When the first container has finished, it leaves a marker that makes the others print "Migrations already applied, skipping..." for the next <SettingConstant name="migrationDoneSeconds" unit="s" />. The lock needs the deployment's Valkey, which [Connect FINOS Workspace to its database and cache](connect-the-database-and-cache.md) describes, so the migrations need that Valkey to be reachable. SQLite takes no lock, because it serves a single machine.
+For MySQL and PostgreSQL, the migrations coordinate through the `alembic_migrations` lock in Valkey. The first process to acquire the lock holds it for at most <SettingConstant name="migrationLockSeconds" unit="min" />. Other replicas log "Another migration in progress by pod" and retry every <SettingConstant name="migrationPollSeconds" unit="s" />. After migration, a marker makes the others log "Migrations already applied, skipping..." for the next <SettingConstant name="migrationDoneSeconds" unit="s" />. [Connect FINOS Workspace to its database and cache](connect-the-database-and-cache.md) covers Valkey connectivity. SQLite serves a single machine and requires no Valkey migration lock.
 
 ## Run the migrations yourself
 
-Run Alembic inside the API's container, in the directory `backend-api/backend`, with the same environment as the API:
+Run Alembic from `backend-api/backend` with the same Python and settings as the API:
 
 ```bash
 python -m alembic upgrade head
 ```
 
-To see which revision a database is at, and which revisions the image knows, use:
+To see which revision the database applied and which revisions the release contains, use:
 
 ```bash
 python -m alembic current
@@ -39,10 +39,10 @@ Alembic prints the identifier of each revision. A database that is behind has a 
 ## Upgrade a deployment
 
 1. Back up the database, because a migration changes the data in place, and some revisions remove columns that nothing reads any more.
-2. Roll out the new image. The migrations run when its first container starts.
+2. Roll out the new release. The startup command runs migrations before the first API process starts.
 3. Check that the API's log says "Database migrations completed successfully", and that `/health` answers.
 
-Roll out the replicas of the API and the worker together, because the code of an old replica does not know a column that a new revision added or removed. Do not run an older image against a database that a newer image has migrated.
+Roll out the API and worker replicas together so they use the same schema. Check compatibility before rolling back to an earlier release against a migrated database.
 
 ## Prepare a first deployment
 

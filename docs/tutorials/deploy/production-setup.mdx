@@ -13,32 +13,32 @@ This page is your starting point for running FINOS Workspace for real users. It 
 
 A deployment has five services, plus a database and Valkey:
 
-| Service | Image | Port | Health check | How many to run |
+| Service | Native runtime | Port | Health check | How many to run |
 |---|---|---|---|---|
-| Web app | The web app image | <WebPort /> | `/health` or `/healthz` | As many as you like |
-| API | The backend image | <SettingDefault name="PORT" unit="raw" /> | `/health` or `/healthz` | As many as you like |
-| Worker | The backend image, with the command `python base_workers.py` | None | None | One |
-| Agent | The agent image | <EnvDefault name="PORT" /> | `/status` when it is running, `/ready` when it can take requests | One, or more if they share Valkey |
-| Agent MCP server | The agent MCP server image | <EnvDefault name="MCP_PORT" /> | `/` | One, or more if they share Valkey |
+| Web app | Serve the built frontend through the web server | <WebPort /> | `/health` or `/healthz` | As many as you like |
+| API | `python api_entrypoint.py` from `backend-api/backend` | <SettingDefault name="PORT" unit="raw" /> | `/health` or `/healthz` | As many as you like |
+| Worker | `python base_workers.py` from `backend-api/backend` | None | None | One |
+| Agent | `node src/server.ts` from `agent` | <EnvDefault name="PORT" /> | `/status` when it is running, `/ready` when it can take requests | One, or more if they share Valkey |
+| Agent MCP server | `node mcp-server/src/server.ts` from `agent` | <EnvDefault name="MCP_PORT" /> | `/` | One, or more if they share Valkey |
 
 A few things to know:
 
-- The API and the worker are the same image. With no command, it starts the API. With the command `python base_workers.py`, it starts the worker.
-- The web app image runs as the user 101, and the other images run as the user 1000. None of them runs as root, except in the init step of the Compose guide, which [Lock down the containers](#lock-down-the-containers) explains.
+- The API and worker share the same locked Python environment. Restrict direct API access to the private network used by the reverse proxy.
+- Run the application services under dedicated unprivileged accounts. See [Lock down the services](#lock-down-the-containers).
 
 You also need:
 
 - A database: MySQL or PostgreSQL. SQLite is meant for one machine, such as a trial.
 - Valkey, or another server that speaks the Redis protocol.
-- A place for uploaded files: a folder that every API and worker container can reach, or a bucket on AWS, Azure or Google Cloud.
+- A place for uploaded files: a folder that every API and worker process can reach, or a bucket on AWS, Azure or Google Cloud.
 
 [Connect FINOS Workspace to its database and cache](connect-the-database-and-cache.md) and [Choose where files are stored](choose-file-storage.md) walk you through the options.
 
 ## The order in which things start
 
 1. The database and Valkey. Everything else needs them, and the API does not report healthy without them.
-2. The init step. This is a one-off container of the backend image. It updates the database tables with `python -m alembic upgrade head`, creates the first organization and administrator from `scripts/cfgs/config.toml` with `python -m scripts.init_users`, writes the file `user_create.json` and exits. It is safe to run on every release, because a run that finds everything in place changes nothing. It finds the organization by its name, so a different name in `config.toml` creates a second organization. [Run database migrations](run-database-migrations.mdx) and [Provision an organization from a file](provision-an-organization.mdx) explain both parts.
-3. The API and the worker, after the init step has finished without errors. They read `user_create.json` from their working directory, `/opt/code`, to learn which role new people get. Where they cannot see that file, as in separate pods, set `DEFAULT_USER_MAPPING` to the `permissions_uuid` in it. The API also runs the migrations every time it starts, so a new replica never runs against an old schema.
+2. Run `python -m alembic upgrade head` and `python -m scripts.init_users` from `backend-api/backend` in its locked Python environment. Initialization creates the first organization and administrator from `scripts/cfgs/config.toml` and writes `user_create.json`. It finds the organization by name, so a different name creates a second organization. [Run database migrations](run-database-migrations.mdx) and [Provision an organization from a file](provision-an-organization.mdx) explain both parts.
+3. Start the API and worker after initialization succeeds. They read `user_create.json` from their working directory to learn which role new people get. For replicas without this file, set `DEFAULT_USER_MAPPING` to its `permissions_uuid`. The API also runs migrations at startup.
 4. The agent, after the API is healthy, because the agent asks the API who each token belongs to. The agent's MCP server needs Valkey.
 5. The web app. It serves the app and its settings, so it can start at any time, but there is little to do until the API and the agent answer.
 
@@ -82,14 +82,14 @@ It prints the token, and on its error output the date on which the token expires
 - A proxy that passes on the address of each client in `X-Forwarded-For` and the scheme in `X-Forwarded-Proto`. The API counts its rate limits per client address, and it reads that address from `X-Forwarded-For` when the request comes from a private network or from loopback. Without the header, every user shares the address of the proxy, and its limits.
 - A private network for the database, Valkey and the agent's MCP server. Browsers never talk to them: the API reaches the MCP server at the address in `DEFAULT_MCP_SERVERS`.
 - Backups of the database, including one right before every upgrade, as [Upgrade a deployment](run-database-migrations.mdx#upgrade-a-deployment) describes.
-- A place for uploaded files that every API and worker container can reach, as [Choose where files are stored](choose-file-storage.md) describes.
+- A place for uploaded files that every API and worker process can reach, as [Choose where files are stored](choose-file-storage.md) describes.
 - A model for the agent: set `DEFAULT_MODEL` and your provider's key in the environment of the agent. [Choose the Agent's model and provider](../../features/agent/choose-the-agent-model.mdx) lists the providers.
 - A request size limit in the proxy that fits what the app sends. People can attach files of up to 25 MiB in the web app, and the agent accepts a request of up to `AGENT_MAX_BODY_MB` megabytes, 64 by default, and refuses a larger one with status 413. Set the limit of your proxy for the agent's name to the same size: nginx, for one, refuses anything over 1 MiB unless you raise it.
 - Connections that stay open while the agent streams an answer, and enough time at shutdown for the agent to finish the questions it is working on, as [What the load balancer and the platform allow](run-the-agent-on-several-replicas.mdx#what-the-load-balancer-and-the-platform-allow) describes.
 
-## Lock down the containers
+## Lock down the services {#lock-down-the-containers}
 
-Run every container as its image's user, drop all Linux capabilities and turn off privilege escalation. The Compose guide does this for every container except the init step, which runs as root, with Docker's default capabilities, so that it can write `user_create.json` on the server. The repository's own Compose file goes further for the agent and its MCP server: a read-only root file system with a writable `/tmp`, an init process that cleans up their child processes, a memory limit of 4 GB and at most 1024 processes. Both work within those limits. Give the agent enough memory for the largest files your users attach.
+Give service accounts write access only to their configured storage, state and temporary directories. Keep application code and configuration read-only to the service. Configure the supervisor to prevent privilege escalation, clean up child processes on shutdown and bound memory and process counts. Size the agent's memory budget for the largest files your users attach.
 
 ## Check that it works
 

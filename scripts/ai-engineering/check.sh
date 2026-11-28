@@ -25,8 +25,29 @@ for path, parse in zip(paths, (tomllib.loads, json.loads)):
     print(path, "parsed")'
     ;;
   mcp)
-    codex mcp list
-    opencode mcp list
+    result=0
+    codex mcp list || result=1
+    for attempt in 1 2 3; do
+      if ! output=$(opencode mcp list); then
+        result=1
+        break
+      fi
+      case "$output" in
+        *"No MCP servers configured"*|"")
+          if [ "$attempt" -lt 3 ]; then
+            sleep 1
+          else
+            printf '%s\n' 'OpenCode did not report an MCP catalog. Check tool execution inside a session before changing configuration.' >&2
+            result=1
+          fi
+          ;;
+        *)
+          printf '%s\n' "$output"
+          break
+          ;;
+      esac
+    done
+    exit "$result"
     ;;
   browser)
     node scripts/ai-engineering/browser-smoke.cjs

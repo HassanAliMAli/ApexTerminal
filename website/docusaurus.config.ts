@@ -33,6 +33,7 @@ const config: Config = {
         sidebarPath: "./sidebars.ts",
         exclude: [
           "ai-engineering/**",
+          "engineering/**",
           "examples/**",
           "**/_*.{js,jsx,ts,tsx,md,mdx}",
           "**/_*/**",

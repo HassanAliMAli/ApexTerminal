@@ -7,7 +7,7 @@ description: 'Drives a running FINOS Workspace from an external AI tool (Claude 
 
 Operate FINOS Workspace through the MCP Companion, not through browser automation, computer-use, screenshots or a screen-reader loop. The Companion exposes the signed-in browser tab as an MCP server so an AI tool outside FINOS Workspace (Claude Desktop, Claude Code, Cursor, Codex, any streamable-HTTP MCP client) reads and changes the user's dashboards through typed tool calls. Reaching for a browser driver to click the sidebar, drag a widget or read an element is the wrong path: eighteen tools cover snapshot, widget library, create, read, update, delete, layout, navigation, backends, apps and agent handoff, each with a schema and a deterministic result. Use them.
 
-The server at `/mcp` on the FINOS Workspace API forwards each tool call to the connected tab, which runs it with the user's session. No tab connected, no call succeeds. The Agent inside the tab uses the same tools over a shorter in-session path (`copilotFunctionCall`, see `agent/CLAUDE.md`); a skill telling the in-tab Agent to use the Companion is wrong — this skill is for an external AI tool, including a coding agent that is helping the user build or test against a running stack.
+The server at `/mcp` on the FINOS Workspace API forwards each tool call to the connected tab, which runs it with the user's session. No tab connected, no call succeeds. The Agent inside the tab uses the same tools over a shorter in-session path (`copilotFunctionCall`, see `agent/AGENTS.md`); a skill telling the in-tab Agent to use the Companion is wrong — this skill is for an external AI tool, including a coding agent that is helping the user build or test against a running stack.
 
 Two implementations live in this repository: the production Python server (`backend-api/backend/workspace_mcp/`) that every deployment uses, and the TypeScript twin in the agent sidecar (`agent/mcp-server/src/bridge/`) that the dev stack can expose for parity tests. Both register the same eighteen tools; only the host origin differs.
 
@@ -15,9 +15,8 @@ Two implementations live in this repository: the production Python server (`back
 
 | Stack | Setting that shows the menu entry | Default |
 |---|---|---|
-| `docker-compose.yml` (project `workspace`) | `UI_SHOW_COMPANION_MCP_MODE=${UI_SHOW_COMPANION_MCP_MODE:-true}` on the `web` service | on |
-| `local/compose.yaml` (project `workspace-local`) | `VITE_UI_SHOW_COMPANION_MCP_MODE: "true"` on `frontend` | on |
-| A deployment (`MODE=production`) | `UI_SHOW_COMPANION_MCP_MODE=true` on the web container, then restart | off |
+| Native Vite development server | Start Vite with `VITE_UI_SHOW_COMPANION_MCP_MODE=true` | off |
+| A deployment (`MODE=production`) | `UI_SHOW_COMPANION_MCP_MODE=true` in the web runtime configuration, then regenerate it | off |
 | Agent-side MCP server (`agent-mcp`) | `COMPANION_TOOLS_ENABLED=true` in `agent/.env`, defaults to `false`; registers the eighteen tools, the prompts and the app-builder resources at `/mcp`, and serves its own bridge at `/bridge/session/start`, `/bridge/ws` and `/bridge/health` | off |
 
 - A deployment with the production backend serves `/mcp` from the API; the agent-side `agent-mcp` is only needed for the TypeScript twin, parity tests, or a local stack that runs the sidecar instead of the Python server.
@@ -26,7 +25,7 @@ Two implementations live in this repository: the production Python server (`back
 ## 2. Connect the tab
 
 1. Sidebar menu → `MCP Companion`. The `FINOS Workspace MCP Companion` dialog opens.
-2. Read the `Endpoint`. It is the API's `/mcp` address, for example `http://localhost:8000/mcp` on the root dev stack or `https://api.workspace.example.com/mcp` on a deployment.
+2. Read the `Endpoint`. It is the API's `/mcp` address, for example `http://127.0.0.1:8000/mcp` on the native development stack or `https://api.workspace.example.com/mcp` on a deployment.
 3. Turn the switch on. Confirm the toast `FINOS Workspace MCP companion connected` and that the icon in the sidebar header turns green.
 4. One tab at a time: a second tab replaces the first. A sign-out or an expired session closes the bridge.
 
@@ -143,7 +142,7 @@ Revoke when the AI tool is no longer in use, when another person may hold the to
 
 ## 10. End-to-end test on the dev stack
 
-With the root stack up (or `local/`), the user signed in and the switch on:
+With the native development stack running, the user signed in and the switch on:
 
 1. Mint a token, copy the `.mcp.json` block, point one AI tool at it.
 2. Ask it: `Take a snapshot of my FINOS Workspace`. Confirm the response names the current dashboard and lists tabs and widgets.
@@ -165,4 +164,4 @@ With the root stack up (or `local/`), the user signed in and the switch on:
 - Server-sent instructions: `agent/mcp-server/src/bridge/instructions.ts` (`SERVER_INSTRUCTIONS`)
 - Browser-side handler: `frontend/src/components/AI/hooks/useWorkspaceBridgeCommandHandler.ts`, `frontend/src/components/AI/WorkspaceBridgeConnectionManager.tsx`, `frontend/src/components/AI/workspaceBridgeProtocol.ts`
 - Companion dialog: `frontend/src/components/LayoutAuth/McpCompanionModal.tsx`, store at `frontend/src/lib/state/workspaceBridge.ts`
-- Agent-side architecture note: `agent/CLAUDE.md` ("workspace owns MCP"; the Agent inside the tab uses `useWorkspaceBridgeCommandHandler` over `copilotFunctionCall`, not the Companion)
+- Agent-side architecture note: `agent/AGENTS.md` ("workspace owns MCP"; the Agent inside the tab uses `useWorkspaceBridgeCommandHandler` over `copilotFunctionCall`, not the Companion)

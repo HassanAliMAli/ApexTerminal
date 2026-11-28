@@ -27,7 +27,12 @@ function validatorFor(
   let entry = compiled.get(schema.$id);
   if (!entry) {
     if (compiled.size >= MAX_COMPILED) compiled.clear();
-    const ajv = new Ajv({ allErrors: true, strictTypes: false, discriminator: true });
+    const ajv = new Ajv({
+      allErrors: true,
+      strictTypes: false,
+      discriminator: true,
+      code: { optimize: false },
+    });
     ajv.addKeyword("x-types");
     ajv.addSchema(schema);
     entry = { ajv, branches: new Map() };

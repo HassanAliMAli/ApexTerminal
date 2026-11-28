@@ -7,24 +7,9 @@ description: Covers building a FINOS Workspace widget plugin from the docs/examp
 
 ## Stack
 
-Use `local/` (`local/compose.yaml`, `MODE=local`, Vite and uvicorn hot reload). It exists for exactly this. Do not rebuild the backend image, the web image or the agent image between plugin iterations; do not `docker compose up --build` on a plugin change; do not copy files into a running container. The plugins directory is a bind mount — writes to `widget-plugins/<plugin-id>/<version>/` on the host appear in the API process without any container action, and the tab reloads the plugin list every 30 seconds on focus and every 60 seconds otherwise.
+Use the native development stack in `docs/tutorials/contribute/run-the-development-stack.md`. Set `MODE=local` and `WIDGET_PLUGINS_DIR` to the absolute path of the repository’s `widget-plugins/` directory. Give the API service account write access for development versions.
 
-| Stack | Start | App | API service | Run compose from | Docker network |
-|---|---|---|---|---|---|
-| **`local/compose.yaml` (use this)** | `make up` | `http://localhost:1420` | `backend` | `local/` | `workspace-local_default` |
-| `docker-compose.yml` | `docker compose up --build -d` | `http://localhost:3000` | `api` | repository root | `workspace_workspace` |
-
-- Both set `MODE: local` and `WIDGET_PLUGINS_DIR: /opt/widget-plugins` and mount `widget-plugins/` at the repository root (git-ignored) there, writable, into the API, worker and `init`. `WORKSPACE_PLUGINS_DIR=<folder>` mounts another folder.
-- Only `MODE=local` offers development versions (section 6). The deploy tutorials set `MODE=production`.
-- After the first start and administrator sign-in (the `install-locally` skill), confirm: as a superuser, `/admin/widgets` (menu **Admin Portal**, **Widgets**), tab **Deployment** shows **Rescan**, not "Widget plugins are off".
-- For multiple agents on the same stack at once, sign each one in as a different seeded dev admin (`workspace-dev1@example.com` / `WorkspaceDev!1`, `-dev2` / `WorkspaceDev!2`, `-dev3` / `WorkspaceDev!3`). They all hold the Admin role so each can reach `/admin/widgets` without waiting on your session. The `install-locally` skill lists them in full and names the `--no-extra-admins` opt-out.
-- The root `docker-compose.yml` is for seeing production-shaped images (nginx-served web app, built agent, `MODE=local` only for the plugin flag). Reach for it to check the final image, never to iterate; frontend and backend code changes there need an image rebuild, and that round trip is the "frozen container" trap this skill is here to steer agents away from.
-
-Never, when iterating on a plugin:
-
-- Rebuild `workspace-backend`, `workspace-web`, `workspace-agent` or any other image.
-- Run `docker cp` into a running container, or shell in and edit files there. The container is a view of `widget-plugins/` on the host; edit the host.
-- Treat an image as the source of truth. The source of truth is `widget-plugins/<plugin-id>/<version>/` on the host and the `src/` of the example in `docs/examples/`.
+After administrator sign-in, open **Admin Portal**, **Widgets**, **Deployment** and confirm **Rescan** is available. Work on the example source in `docs/examples/` and install each built version under `widget-plugins/<plugin-id>/<version>/`. The tab reloads the plugin list every 30 seconds on focus and every 60 seconds otherwise.
 
 ## 1. Build an example
 
@@ -81,9 +66,9 @@ Every key: `docs/reference/plugins/package-and-manifest.mdx`, `docs/reference/sc
    mkdir -p widget-plugins/<plugin-id>
    cp -R docs/examples/<example>/dist/<plugin-id>/<version> widget-plugins/<plugin-id>/
    ```
-2. Run the server's validator in the API container (from `local/`; on the root stack use `docker compose exec api` from the repository root):
+2. Run the server's validator from `backend-api/backend` with the API Python environment active:
    ```bash
-   docker compose exec backend python -m scripts.plugin_check /opt/widget-plugins/<plugin-id>/<version>
+   python -m scripts.plugin_check ../../widget-plugins/<plugin-id>/<version>
    ```
 3. Confirm: the last line is `ok: the server would offer this version for approval`. `blocked: ...` exits 1 and lists `error` lines; `warning` lines do not block.
 4. For a hand-built package, print the checksum with `--digest`, write the `checksum` line's value as `"checksum"` in `plugin.json`, and run step 2 again.
@@ -107,12 +92,7 @@ Same steps from a shell with `python -m scripts.workspace_admin plugin <action>`
 
 ## 5. Add the widget to a dashboard
 
-1. A handled type needs a connection whose `widgets.json` declares `"type": "<viz-type>"`. The examples backend (`docs/examples/backend/README.md`) serves every example type. After building `sql-explorer` and `ag-grid`, run from `docs/examples/backend`, with `<network>` from the Stack table (check `docker network ls`):
-   ```bash
-   python3 setup.py
-   SQL_EXPLORER_VERSION=<sql-version> AG_GRID_VERSION=<grid-version> WORKSPACE_NETWORK=<network> docker compose up -d --build
-   ```
-   Confirm: `setup.py` prints `Wrote .env for Compose and secrets/workspace/<plugin>/postgres_url for each plugin.` Then add `http://localhost:7798` under **Connections**.
+1. A handled type needs a connection whose `widgets.json` declares `"type": "<viz-type>"`. The examples backend (`docs/examples/backend/README.md`) serves every example type. Follow its native startup guide, then add `http://127.0.0.1:7798` under **Connections**.
 2. On a dashboard, select **Add widgets** in the toolbar at the bottom right. In **Widget Menu**, tab **Widgets Library**, search the widget name and add it.
 3. Confirm: the card renders. "This widget type is not available to you": no grant or enablement, or a development copy with an error; "Failed to load: the plugin's files do not match the approved version": changed files; "Plugin error" or "Not responding": the module.
 
@@ -125,14 +105,14 @@ Same steps from a shell with `python -m scripts.workspace_admin plugin <action>`
    rsync -a --delete dist/<plugin-id>/<next-version>/ ../../../widget-plugins/<plugin-id>/<next-version>/
    ```
 3. Focus the dashboard window: the plugin list reloads on focus once it is 30 seconds old, and every 60 seconds. Everyone granted the plugin on this stack gets the copy. A stale `checksum` shows only as a warning under **Integrity**.
-4. A copy with an error drops the whole plugin from dashboards, and **Deployment** lists only its warnings. Read the errors (lines with `✗`):
+4. A copy with an error drops the whole plugin from dashboards, and **Deployment** lists only its warnings. From `backend-api/backend` with the API Python environment active, read the errors (lines with `✗`):
    ```bash
-   docker compose exec backend python -m scripts.workspace_admin plugin show <plugin-id>
+   python -m scripts.workspace_admin plugin show <plugin-id>
    ```
 5. Finish: with the `checksum` current (the example builds write it), tick the **Changes since <version>** items and select **Approve <next-version> and replace <version>**. To abandon it, delete its directory and **Rescan**; the version becomes `missing`.
 
 - The buttons appear only for a superuser, with `MODE=local`, an active version and no version in `development`.
-- `The plugins directory cannot be written: ...`: the mount must be writable by uid 1000 (`USER 1000:1000` in `backend-api/backend/fastapi.Dockerfile`); a `:ro` override of the mount causes it.
+- `The plugins directory cannot be written: ...`: give the API service account write access to the configured plugin directory.
 - `workspace_admin plugin approve` refuses a `development` version; approve it on **Deployment**.
 
 ## 7. Proxies, secrets and backends
@@ -142,11 +122,11 @@ Same steps from a shell with `python -m scripts.workspace_admin plugin <action>`
 | Call a keyed API | declare `secrets`, `server.network` (https origins only), `server.proxies`; on the widget `core:proxy:call` and `server.proxies` | `docs/tutorials/plugins/call-an-api-from-a-plugin.md`, `docs/reference/plugins/proxies.mdx` |
 | Set a secret | **Deployment**, plugin, **Secrets**, enter the value, **Set**; or `plugin secret set <plugin-id> <secret-name>` (prompts without echo, or reads stdin); or a file `<WIDGET_PLUGIN_SECRETS_DIR>/<plugin-id>/<secret-name>`, which wins | `docs/tutorials/plugins/deploy-a-plugin.md` |
 | Reach a private host (any `MODE`) | **Overrides**, tick **server network**, enter `https://<host>` (or `tcp://<host>:<port>` with a backend), tick "Allow private hosts ..." or "Let the server network's hosts resolve to private addresses ...", **Save overrides**; CLI `plugin override <plugin-id> --server-network <origin> --confirm private-host` | `docs/reference/plugins/frame-policy.mdx` |
-| Trust a private CA | mount the CA file and set `WIDGET_PLUGIN_PROXY_CA_FILE` | `local/LOCAL_SETUP.md` |
+| Trust a private CA | give the API service account read access to the CA file and set `WIDGET_PLUGIN_PROXY_CA_FILE` | `docs/tutorials/deploy/production-setup.mdx` |
 | Frame request blocked | **Blocked requests**, **Allow** fills the source into **Overrides**; tick the "Allow ..." confirmation it shows, **Save overrides** | `docs/reference/plugins/frame-policy.mdx` |
-| Plugin backend | declare `server.backend` (`protocol: 1`, `routes`); on the widget `core:backend:call` and `server.routes`; run `backend/` isolated; set `WIDGET_PLUGIN_BACKENDS={"<plugin-id>": "<internal-url>"}` in `backend-api/backend/envs/.env`; recreate the API (`make up` in `local/`, `docker compose up -d` at the root; `make restart` keeps the old values) | `docs/tutorials/plugins/run-a-plugin-backend.md`, `docs/reference/plugins/backends.mdx` |
+| Plugin backend | declare `server.backend` (`protocol: 1`, `routes`); on the widget `core:backend:call` and `server.routes`; run `backend/` isolated; set `WIDGET_PLUGIN_BACKENDS={"<plugin-id>": "<internal-url>"}` in `backend-api/backend/envs/.env`; restart the API to load the environment setting | `docs/tutorials/plugins/run-a-plugin-backend.md`, `docs/reference/plugins/backends.mdx` |
 
-Examples backend: `WIDGET_PLUGIN_BACKENDS={"sql-explorer": "http://examples-gateway:8081", "ag-grid": "http://examples-gateway:8082"}`, server network override `tcp://postgres:5432` with private hosts confirmed, and each plugin's `postgres_url` secret from `docs/examples/backend/secrets/workspace/<plugin>/postgres_url`.
+For loopback development, the examples backend serves the SQL explorer plugin at `http://127.0.0.1:7798` and the AgGrid plugin at `http://127.0.0.1:7798/plugins/ag-grid`. See `docs/examples/backend/README.md` to seed the optional PostgreSQL data. For the `postgres_url` secret and TCP allowlist, follow the PostgreSQL setup in `docs/examples/sql-explorer/README.md` and `docs/examples/ag-grid/README.md` using the address of the database the plugin will use.
 
 Confirm a backend: **Backend**, **Check now** shows "Runs the approved version."; `python -m scripts.workspace_admin plugin check-backend <plugin-id>` prints `<plugin-id> backend: identity ok (the approved version)`.
 
@@ -181,9 +161,9 @@ gh run list --workflow plugin-interop.yml --limit 1
 
 1. Work through "Before you publish" in `docs/tutorials/plugins/build-a-plugin.md`. Raise `version` in `package.json`, `npm run build`, and run `plugin_check` on the new directory. Never change an approved version's files.
 2. Print the digest with `python -m scripts.plugin_check --digest <plugins-dir>/<plugin-id>/<version>` and pin it: `WIDGET_PLUGINS_PINS={"<plugin-id>@<version>": "<digest>"}`, plus `WIDGET_PLUGINS_REQUIRE_PINS=true`.
-3. Deliver the directory with identical files to every API replica: `COPY` it into the API image, or mount a volume read-only on every replica, with `WIDGET_PLUGINS_DIR` set.
+3. Deliver the directory with identical files to every API replica: install it at the same read-only path on every replica and set `WIDGET_PLUGINS_DIR`.
 4. Keep the previous version's directory until the new one is approved; a removed directory turns `missing`.
-5. Rescan and approve; in the API container, `python -m scripts.workspace_admin plugin approve <plugin-id> <version> --digest <digest> --acknowledge` stops if the server's files differ.
+5. Rescan and approve; with the API Python environment active, `python -m scripts.workspace_admin plugin approve <plugin-id> <version> --digest <digest> --acknowledge` stops if the server's files differ.
 6. Provide secrets as files under `WIDGET_PLUGIN_SECRETS_DIR` and run any backend as in section 7.
 
 A `MODE=production` stack has no Patch, Minor or Major. Detail: `docs/tutorials/plugins/deploy-a-plugin.md`, `docs/reference/plugins/lifecycle.mdx`.
