@@ -10,7 +10,7 @@
 - [x] 2.1 Preserve the inherited and post-fork Gitleaks baseline and keep all scanning gates enabled.
 - [x] 2.2 Record occurrence-specific false positives and prepare an unsent private upstream disclosure.
 - [x] 2.3 Check accessible workstation configuration for inherited credentials and verify local file permissions, isolation, and token policy.
-- [ ] 2.4 Verify each active remote deployment using an authorized inventory and redacted configuration checks.
+- [x] 2.4 Verify each active remote deployment using an authorized inventory and redacted configuration checks. N/A because there are no active remote deployments.
 - [x] 2.5 Patch the five affected packages and verify the revised lockfiles with the offline advisory scan.
 - [x] 2.6 Complete the patched Node verification gates and verify the SQL isolation timeout correction.
 - [x] 2.7 Verify a native isolated HTTPS application smoke, including applied migrations, loopback binding, fresh fixture configuration, and Chrome auth and session checks.

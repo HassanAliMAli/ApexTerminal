@@ -12,4 +12,4 @@ The [Phase 0 verification record](../../openspec/changes/complete-harness/verifi
 
 The staged gate accepted an ordinary change and rejected a synthetic credential without revealing its value. Historical findings remain under private triage. The fresh lockfile scan found no issues under the documented exclusions.
 
-No deployment or environment is registered in the ApexTerminal GitHub repository. Verification of any deployment managed outside GitHub requires its inventory and authorized access.
+GitHub lists no ApexTerminal deployments or environments. The repository owner confirmed there are no active deployments outside GitHub either, so remote deployment verification was not applicable for Phase 0.
