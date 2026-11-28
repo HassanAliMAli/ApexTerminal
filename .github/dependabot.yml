@@ -5,7 +5,7 @@ updates:
     directories:
       - /
       - /.github/actions/*
-    target-branch: develop
+    target-branch: main
     schedule:
       interval: weekly
     groups:
@@ -22,7 +22,7 @@ updates:
       - /docs/examples/reference-agent/typescript
       - /docs/examples/reference-backend/typescript
       - /docs/examples/sql-explorer
-    target-branch: develop
+    target-branch: main
     schedule:
       interval: weekly
     groups:
@@ -36,7 +36,7 @@ updates:
       - /docs/examples/backend
       - /docs/examples/reference-agent/python
       - /docs/examples/reference-backend/python
-    target-branch: develop
+    target-branch: main
     schedule:
       interval: weekly
     groups:

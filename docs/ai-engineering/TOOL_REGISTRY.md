@@ -4,7 +4,7 @@ The user tool prefix is `~/.local/share/apex-ai`. npm tools are under `npm/node_
 
 | Component | Version or revision | Responsibility |
 |---|---|---|
-| [Superpowers](https://github.com/obra/superpowers) | 7.0.2, `22f0b463e7a5e579904dd6211a520321035526f7` | Two reviewed shared skill files |
+| [Superpowers](https://github.com/obra/superpowers) | 7.0.2, `22f0b463e7a5e579904dd6211a520321035526f7` | Fifteen shared skills and their bundled support files |
 | [Serena](https://github.com/oraios/serena) | 2.1.0 | On-demand semantic navigation |
 | [Context7](https://github.com/upstash/context7) | 4.8.0 | Public version-compatible documentation, subject to service quota |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 2.2.0 | Durable specifications and change lifecycle |

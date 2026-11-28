@@ -1,11 +1,11 @@
 ---
 name: administer-via-cli
-description: 'Runs the FINOS Workspace administration CLI, `python -m scripts.workspace_admin`, from inside the API container to create and update organizations (entities), create, list, move and reset passwords for users, add and remove data backends on an entity, bulk-provision from a JSON config, and manage widget plugins (rescan, approve, enable/disable, grant/ungrant, override the CSP and server network, set and clear secrets, check the backend, list events and blocked requests, revoke, restore and forget). Covers every noun and subcommand, the invocation shape for the `local/`, root and Kubernetes stacks, the `--json` mode, where secrets come from (stdin, never argv), the one-time password-set links that `user create` and `user reset-password` print, and the idempotency rules. Use for requests such as "create an organization", "create a user", "list users", "reset the password of X", "move a user to another entity", "add a data backend", "bulk provision an org from JSON", "approve plugin X version Y", "rescan plugins", "enable plugin for all", "grant plugin to role", "set a plugin secret", "check a plugin backend", "revoke a plugin", "forget a removed plugin".'
+description: 'Runs the FINOS Workspace administration CLI, `python -m scripts.workspace_admin`, with the native API environment to create and update organizations (entities), create, list, move and reset passwords for users, add and remove data backends on an entity, bulk-provision from a JSON config, and manage widget plugins (rescan, approve, enable/disable, grant/ungrant, override the CSP and server network, set and clear secrets, check the backend, list events and blocked requests, revoke, restore and forget). Covers every noun and subcommand, the invocation shape for native Linux services and Kubernetes, the `--json` mode, where secrets come from (stdin, never argv), the one-time password-set links that `user create` and `user reset-password` print, and the idempotency rules. Use for requests such as "create an organization", "create a user", "list users", "reset the password of X", "move a user to another entity", "add a data backend", "bulk provision an org from JSON", "approve plugin X version Y", "rescan plugins", "enable plugin for all", "grant plugin to role", "set a plugin secret", "check a plugin backend", "revoke a plugin", "forget a removed plugin".'
 ---
 
 # Administer FINOS Workspace through the admin CLI
 
-`scripts.workspace_admin` is the one command-line tool for everything an administrator does from a shell. It runs inside an API container, reads the live database through the same code the HTTP routes use, and exits non-zero on any error. Every subcommand accepts `--json` for machine-readable output (except the two `sample` commands, which only print a template). Reach for the CLI, not direct SQL, for anything an administrator can do in the web app.
+`scripts.workspace_admin` is the one command-line tool for everything an administrator does from a shell. It runs with the API configuration, reads the live database through the same code the HTTP routes use, and exits non-zero on any error. Every subcommand accepts `--json` for machine-readable output (except the two `sample` commands, which only print a template). Reach for the CLI, not direct SQL, for anything an administrator can do in the web app.
 
 Never run this against a production database without the operator's explicit sign-off; the operations are the same ones the web app guards behind the superuser role.
 
@@ -13,8 +13,7 @@ Never run this against a production database without the operator's explicit sig
 
 | Stack | Shell call |
 |---|---|
-| `local/` (project `workspace-local`) | `docker compose exec backend python -m scripts.workspace_admin <noun> <verb> [args]` (run from `local/`) |
-| Root `docker-compose.yml` (project `workspace`) | `docker compose exec api python -m scripts.workspace_admin <noun> <verb> [args]` (run from the repository root) |
+| Native Linux | From `backend-api/backend` with the API Python environment active, run `python -m scripts.workspace_admin <noun> <verb> [args]` |
 | Kubernetes | `kubectl -n finos-workspace exec deploy/api -- python -m scripts.workspace_admin <noun> <verb> [args]`, or `exec -it` when a step reads stdin |
 
 - Nouns: `entity`, `user`, `data-backend`, `provision`, `plugin`. `python -m scripts.workspace_admin -h` lists them; `<noun> -h` lists its verbs; `<noun> <verb> -h` prints its arguments.
@@ -90,7 +89,7 @@ Always `check` before `apply` on a config a human hand-wrote.
 
 ## Plugin
 
-A widget plugin is placed on the server by the operator (the files land in `WIDGET_PLUGINS_DIR`, mounted from `widget-plugins/` on the dev stacks). The CLI does not install packages; it reads the directory, approves, enables, grants, and controls the plugin's lifecycle. See `.agents/skills/develop-plugins/SKILL.md` for the author-side workflow.
+A widget plugin is placed on the server by the operator (the files land in `WIDGET_PLUGINS_DIR`, configured as `widget-plugins/` for native development). The CLI does not install packages; it reads the directory, approves, enables, grants, and controls the plugin's lifecycle. See `.agents/skills/develop-plugins/SKILL.md` for the author-side workflow.
 
 | Verb | Arguments | Does |
 |---|---|---|
@@ -121,7 +120,7 @@ Approval flow, every time:
 5. `plugin approve <plugin-id> <version> --digest <digest> --acknowledge` — approves and activates.
 6. `plugin enable <plugin-id> --all` (or `--entity <uuid>`).
 7. `plugin grant <plugin-id> --role <uuid>` for every role that should reach it.
-8. For every secret the manifest declares: `plugin secret set <plugin-id> <name>`; read the value from a source the shell does not log, e.g. `pass show <path>` piped in, or `read -s` into a variable, then `printf '%s' "$value" | docker compose exec -T backend python -m scripts.workspace_admin plugin secret set <plugin-id> <name>`.
+8. For every secret the manifest declares: `plugin secret set <plugin-id> <name>`; read the value from a source the shell does not log, e.g. `pass show <path>` piped in, or `read -s` into a variable, then `printf '%s' "$value" | python -m scripts.workspace_admin plugin secret set <plugin-id> <name>`.
 
 ## JSON mode
 
@@ -136,21 +135,21 @@ Use JSON when a script parses the result. The human mode is lossy on purpose: sh
 
 ## Stdin for a secret
 
-Non-TTY stdin is the only way to automate `plugin secret set`. From the host, pipe into `docker compose exec -T`:
+Non-TTY stdin is the only way to automate `plugin secret set`. From `backend-api/backend`, pipe into the CLI with the API environment active:
 
 ```bash
-printf '%s' "<the value>" | docker compose exec -T backend python -m scripts.workspace_admin plugin secret set <plugin-id> <name>
+printf '%s' "<the value>" | python -m scripts.workspace_admin plugin secret set <plugin-id> <name>
 ```
 
-- `-T` disables TTY allocation so the script picks the stdin branch (`sys.stdin.isatty()` returns false).
+- Piping the value selects the CLI’s stdin branch.
 - `printf '%s'` writes the value with no trailing newline; the script strips one `\n` and one `\r` anyway, but the explicit shape is safer against shell tooling.
-- Never pass the value as an argument or an environment variable: it ends up in the API's process list and the container's environment file.
+- Never pass the value as an argument or an environment variable: it ends up in the API's process list and the service environment.
 - On Kubernetes, use `kubectl exec -i deploy/api -- python -m scripts.workspace_admin plugin secret set <plugin-id> <name>` with the value on stdin.
 
 ## Finding UUIDs
 
 - Entity UUID: `entity list` filters on `--size`; grep by name. With many entities, `entity list --json | jq '.items[] | select(.name=="Acme") | .uuid'`.
-- Role UUID: there is no CLI role list today. On the dev stacks, `docker compose exec backend python -c "..."` with a short SQLAlchemy query, or query the API's `/entities/<uuid>/roles` with the admin's session cookie. Document the role UUID per environment; it is stable.
+- Role UUID: there is no CLI role list today. On the dev stacks, `python -c "..."` with a short SQLAlchemy query, or query the API's `/entities/<uuid>/roles` with the admin's session cookie. Document the role UUID per environment; it is stable.
 - User UUID: `user list --email <substring>` returns the UUID in the row.
 
 ## Common failures
@@ -163,12 +162,12 @@ printf '%s' "<the value>" | docker compose exec -T backend python -m scripts.wor
 | `✗ Error: <plugin-id> has no version <version>` | `approve` on a version that never scanned | `plugin rescan` first, then `plugin list` to confirm the version is listed. |
 | `✗ Error: The server has <X> for this version, not <Y>: the files are not the ones you checked` | `--digest` mismatch | The files under `widget-plugins/<plugin-id>/<version>/` differ from what you checked. Rebuild, `rsync` again, `plugin rescan`, re-check with `plugin_check --digest`, then approve. |
 | `✗ Error: Nothing approved. Run again with --acknowledge ...` | `approve` without `--acknowledge` | Expected; review the printed items, re-run with `--acknowledge`. |
-| `Widget plugins are off: the API has no WIDGET_PLUGINS_DIR` on `plugin list` | Environment not set | `WIDGET_PLUGINS_DIR=/opt/widget-plugins` on the API container. The dev stacks set it already. |
+| `Widget plugins are off: the API has no WIDGET_PLUGINS_DIR` on `plugin list` | Environment not set | Set `WIDGET_PLUGINS_DIR` to the absolute path of the plugin directory in the API environment. |
 | `The value is empty` on `secret set` | Empty stdin or empty prompt | Pipe a non-empty value; a `printf ''` or a TTY return accidentally sends an empty string. |
 
 ## Compose with the three local-dev admins
 
-The three seeded admins (`workspace-dev1..dev3@example.com`, `.agents/skills/install-locally/SKILL.md`) all have the Admin role, so each can run every verb above and each stay signed in alongside the primary. For multi-agent work on the same stack, use one seeded admin per agent and let the primary stay with the human.
+For concurrent administration tests, use a distinct disposable administrator per tester. The native setup guide creates only the requested primary administrator by default.
 
 ## Reference
 

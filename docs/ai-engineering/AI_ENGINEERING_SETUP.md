@@ -12,6 +12,10 @@ bash scripts/ai-engineering/check.sh init /path/to/new-project
 
 OpenCode reads MCP entries under `mcp.servers` in `~/.config/opencode/opencode.json`. Codex reads `mcp_servers` in `~/.codex/config.toml`. Both discover project skills under `.agents/skills`. OpenSpec stores requirements, changes and archives under `openspec/`.
 
+The MCP status check retries an empty OpenCode catalog twice while the background service loads the project. If the check still fails, open a session in the project and check tool execution before editing configuration. For Codex specialist delegation, use a persisted session. The root and Copilot agent instruction files fit the default Codex project document budget. The scoped [Copilot agent rules](COPILOT_AGENT_RULES.md) hold the detailed protocol and security requirements.
+
+For on-demand Serena with OpenCode 2.4.1 and Serena 2.1.0, set `"protocol": "2026-07-28"` on the existing `mcp.servers.apex-serena` entry. Keep it disabled when semantic navigation is unnecessary. If the first call runs during startup, retry after the server connects.
+
 Use Playwright MCP for interaction and the existing frontend Playwright Test suite for repeatable journeys. Use isolated, headless Chrome DevTools MCP for network, console, rendering and performance diagnosis. Start one browser tool at a time. Automated axe scans cover machine-checkable rules. Review keyboard order, focus recovery, accessible announcements and the meaning of chart encodings manually.
 
 Run local quality checks with the `secrets`, `sast`, and `dependencies` commands. The existing CodeQL, frontend, backend, agent and E2E workflows retain their roles. The new pull-request workflow runs Gitleaks and the checked-in local Semgrep rules.
@@ -21,3 +25,5 @@ Run the loopback-only load scenario with `k6 run scripts/ai-engineering/health-l
 The application agent already supports console traces with `OTEL_TRACES_CONSOLE=true` and collector export with `OTEL_EXPORTER_OTLP_ENDPOINT`. Use synthetic requests for console tracing and inspect only trace IDs, timings and outcomes. Backend instrumentation, metric baselines and cross-service propagation require separate runtime verification.
 
 See [workflow](AGENT_WORKFLOW.md), [tools](TOOL_REGISTRY.md), [skills](SKILLS_REGISTRY.md), [verification](VERIFICATION_REPORT.md), and [maintenance](MAINTENANCE.md).
+
+The [post-installation audit](../engineering/HARNESS_AUDIT.md) records live assistant probes and the remaining verification gaps.

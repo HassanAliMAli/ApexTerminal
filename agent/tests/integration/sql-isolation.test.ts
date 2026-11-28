@@ -17,7 +17,7 @@ function tools(rows: Record<string, unknown>[] = [{ a: 1 }, { a: 2 }, { a: 3 }])
 let saved: string | undefined;
 beforeEach(() => {
   saved = process.env.AGENT_SQL_TIMEOUT_MS;
-  process.env.AGENT_SQL_TIMEOUT_MS = "1500";
+  delete process.env.AGENT_SQL_TIMEOUT_MS;
 });
 afterEach(() => {
   if (saved === undefined) delete process.env.AGENT_SQL_TIMEOUT_MS;
@@ -36,6 +36,10 @@ async function whileRunning<T>(work: () => Promise<T>): Promise<{ result: T; bea
 }
 
 describe("a query that never ends", () => {
+  beforeEach(() => {
+    process.env.AGENT_SQL_TIMEOUT_MS = "1500";
+  });
+
   it("is stopped, the model is told, and the agent goes on answering meanwhile", async () => {
     const { call } = tools();
     const { result, beats, ms } = await whileRunning(() =>
