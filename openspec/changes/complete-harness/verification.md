@@ -25,7 +25,7 @@ These were the outstanding checks on November 26. Native startup and test instru
 | Check | Result |
 |---|---|
 | Local discovery | `opencode debug agents` listed all 10 project roles. A Codex reviewer ran independently on the working-tree diff. Both roles directories matched by name, all 16 project skill headers matched their directory, and all 15 Superpowers skills resolved to pinned version 7.0.2. |
-| OpenCode MCP | The warm client reported Context7 and Playwright connected. The status command retries an empty cold catalog. Fixture checks verified successful retry, bounded failure for a persistently empty catalog, and preservation of a Codex failure. A model-driven verification on the real checkout still requires a provider and permitted data scope. |
+| OpenCode MCP | The warm client reported Context7 and Playwright connected. The status command retries an empty cold catalog. Fixture checks verified successful retry, bounded failure for a persistently empty catalog, and preservation of a Codex failure. The scoped model-driven check appears below. |
 | Staged gate | A disposable repository accepted a benign staged change and rejected one synthetic token. The token value did not appear in the output. |
 | Dependency scan | A fresh cache downloaded the public OSV databases for npm and PyPI. The offline scan of all four lockfiles reported no issues under the existing `osv-scanner.toml` exclusions. |
 | Clean dependency installation | `npm ci` completed in isolated frontend, agent, and website directories. Frontend and agent both reported Hono 4.13.23 and `@hono/node-server` 2.1.11, matching their locks. The frontend runtime build completed. |
@@ -36,8 +36,8 @@ These were the outstanding checks on November 26. Native startup and test instru
 
 ## Main-branch transition
 
-OpenCode’s `nemotron-3.5-lightning-free` model reviewed an allowlisted export of public ApexTerminal revision `a8fa58d`. The standalone process used a temporary home without workstation configuration or credentials. Its two completed read-tool calls inspected `AGENTS.md` and `.github/workflows/local-security.yml`. It correctly reported the prior `develop` trigger and the `--redact=100` scan. The run reported zero model cost.
+OpenCode’s `nemotron-3.5-lightning-free` model reviewed allowlisted exports of public ApexTerminal revisions `a8fa58d` and `78caa3c`. Each standalone process used a temporary home without workstation configuration or credentials. For each revision, two completed read-tool calls inspected `AGENTS.md` and `.github/workflows/local-security.yml`. The review identified the change from `develop` to `main` and verified the `--redact=100` scan in both revisions.
 
-GitHub reported zero deployments and zero environments. The repository workflows and documentation identify no active deployment target. A deployment managed outside GitHub remains unverified until its inventory is confirmed.
+GitHub reported zero deployments, zero environments, and disabled GitHub Pages. The homepage points to upstream FINOS Workspace documentation. No ApexTerminal deployment target was identified in repository workflows or documentation. A deployment managed outside GitHub remains unverified until its inventory is confirmed.
 
-The independent working-tree review was completed before opening the feature-branch PR. CI and review evidence will be recorded with the PR.
+The independent working-tree review was completed before opening [PR #11](https://github.com/HassanAliMAli/ApexTerminal/pull/11). CI on `78caa3c` returned 21 successful checks and one skipped optional CodeRabbit check. The PR merged into `main` at `91455bf`. The retired `develop` and feature branches were verified as merged before deletion.
